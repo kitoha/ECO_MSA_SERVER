@@ -1,0 +1,70 @@
+name: 📋 Task Issue
+description: 프로젝트 작업 이슈 생성
+title: "[ISSUE] "
+labels: []
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 작업 이슈
+        프로젝트의 구체적인 작업 단위를 관리합니다.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: 작업에 대한 설명
+      placeholder: |
+        DDD 패턴을 적용한 Product 도메인 구현
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: 구현해야 할 작업 목록 (체크리스트)
+      placeholder: |
+        - [ ] Product Aggregate 설계 (Entity, Value Objects)
+        - [ ] Product Repository Interface 정의
+        - [ ] Product Repository 구현 (Spring Data JPA)
+        - [ ] Product Domain Service 구현
+        - [ ] Product REST API Controller 구현 (CRUD)
+        - [ ] Unit Test 작성
+      value: |
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: 완료 조건
+      placeholder: |
+        - Product 생성/조회/수정/삭제 API가 정상 동작
+        - 도메인 로직이 Service Layer에 캡슐화됨
+        - 테스트 커버리지 80% 이상
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-notes
+    attributes:
+      label: Technical Notes
+      description: 기술적 세부사항, 참고사항 (선택사항)
+      placeholder: |
+        - Spring Boot 3.2.x 사용
+        - DDD Aggregate Pattern 적용
+        - RESTful API 설계
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: 선행 작업이나 블로킹 이슈 (선택사항)
+      placeholder: |
+        - Depends on #4 (Database Setup)
+        - Blocks #8
