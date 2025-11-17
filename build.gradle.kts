@@ -1,40 +1,71 @@
 plugins {
-	kotlin("jvm") version "1.9.25"
-	kotlin("plugin.spring") version "1.9.25"
-	id("org.springframework.boot") version "3.5.7"
-	id("io.spring.dependency-management") version "1.1.7"
+	alias(libs.plugins.kotlin.jvm) apply false
+	alias(libs.plugins.kotlin.spring) apply false
+	alias(libs.plugins.kotlin.jpa) apply false
+	alias(libs.plugins.kotlin.kapt) apply false
+	alias(libs.plugins.spring.boot) apply false
+	alias(libs.plugins.spring.dependency.management) apply false
+	alias(libs.plugins.sonarqube)
+	jacoco
 }
 
 group = "com.eco"
 version = "0.0.1-SNAPSHOT"
-description = "Demo project for Spring Boot"
-
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
-}
 
 repositories {
 	mavenCentral()
 }
 
-dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
+subprojects {
+	apply(plugin = "jacoco")
 
-kotlin {
-	compilerOptions {
-		freeCompilerArgs.addAll("-Xjsr305=strict")
+	afterEvaluate {
+		if (buildFile.exists()) {
+			tasks.withType<Test> {
+				useJUnitPlatform()
+			}
+
+			tasks.matching { it.name == "jacocoTestReport" }.configureEach {
+				if (this is JacocoReport) {
+					dependsOn(tasks.withType<Test>())
+					reports {
+						xml.required.set(true)
+						html.required.set(true)
+					}
+
+					classDirectories.setFrom(
+						files(classDirectories.files.map {
+							fileTree(it) {
+								exclude(
+									"**/config/**",
+									"**/dto/**",
+									"**/entity/**",
+									"**/*Application*.class"
+								)
+							}
+						})
+					)
+				}
+			}
+		}
 	}
 }
 
-tasks.withType<Test> {
-	useJUnitPlatform()
+sonarqube {
+	properties {
+		property("sonar.projectKey", "kitoha_ECO_MSA_SERVER")
+		property("sonar.organization", "kitoha")
+		property("sonar.host.url", "https://sonarcloud.io")
+		property(
+			"sonar.coverage.jacoco.xmlReportPaths",
+			"**/build/reports/jacoco/test/jacocoTestReport.xml"
+		)
+
+		property(
+			"sonar.coverage.exclusions",
+			"**/config/**," +
+					"**/dto/**," +
+					"**/entity/**,"
+		)
+	}
 }
