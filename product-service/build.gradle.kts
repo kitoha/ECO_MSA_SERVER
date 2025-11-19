@@ -4,6 +4,7 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   alias(libs.plugins.kotlin.jpa)
+  alias(libs.plugins.kotlin.kapt)
 }
 
 group = "com.eco"
@@ -25,6 +26,9 @@ dependencies {
   implementation(libs.spring.boot.starter.data.jpa)
   implementation(libs.kotlin.reflect)
   implementation(libs.postgresql)
+  implementation("com.querydsl:querydsl-core:${libs.versions.querydsl.get()}")
+  implementation("com.querydsl:querydsl-jpa:${libs.versions.querydsl.get()}:jakarta")
+  kapt("com.querydsl:querydsl-apt:${libs.versions.querydsl.get()}:jakarta")
   testImplementation(libs.spring.boot.starter.test)
   testImplementation(libs.kotlin.test.junit5)
   testRuntimeOnly(libs.junit.platform.launcher)

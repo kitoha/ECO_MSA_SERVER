@@ -4,6 +4,7 @@ springBoot = "3.5.0"
 springDependencyManagement = "1.1.7"
 sonarqube = "7.0.0.6105"
 kotlinxCoroutines = "1.8.0"
+querydsl = "5.1.0"
 
 [libraries]
 # Spring Boot
