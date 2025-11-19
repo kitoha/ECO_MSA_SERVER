@@ -26,6 +26,9 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
+### Document
+/docs
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
