@@ -31,7 +31,7 @@ class ProductImage (
   @JoinColumn(name = "product_id", nullable = false)
   var product: Product
 ):  BaseEntity() {
-  @Column(nullable = false, name = "product_id", insertable = false, updatable = false)
-  var productId: Long = product.id ?: 0
-    private set
+
+  val productId: Long
+    get() = product.id ?: throw IllegalStateException("Product ID is null")
 }

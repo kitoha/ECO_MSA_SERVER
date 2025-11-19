@@ -11,6 +11,7 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
@@ -31,6 +32,7 @@ class Product (
   var description: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "category_id", nullable = false)
   var category: Category,
 
   @Column(nullable = false, precision = 10, scale = 2)
@@ -53,6 +55,9 @@ class Product (
 
   val images: List<ProductImage>
     get() = _images.toList()
+
+  val categoryId: Long
+    get() = category.id ?: throw IllegalStateException("Category ID is null")
 
   fun addImage(image: ProductImage) {
     _images.add(image)

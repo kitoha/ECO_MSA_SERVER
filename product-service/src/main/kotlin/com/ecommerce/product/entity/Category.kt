@@ -60,8 +60,7 @@ class Category (
   )
   private val _products: MutableList<Product> = mutableListOf()
 
-  @Column(name = "parent_category_id", insertable = false, updatable = false)
-  var parentCategoryId: Long? = null
-    private set
+  val parentCategoryId: Long?
+    get() = parent?.id
 
 }
