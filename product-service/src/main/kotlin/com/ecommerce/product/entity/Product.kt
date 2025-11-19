@@ -94,8 +94,9 @@ class Product (
 
   fun getDiscountRate(): BigDecimal {
     if (originalPrice == BigDecimal.ZERO) return BigDecimal.ZERO
-    return ((originalPrice - salePrice) / originalPrice * BigDecimal(100))
-      .setScale(2, RoundingMode.HALF_UP)
+    return (originalPrice - salePrice)
+      .multiply(BigDecimal(100))
+      .divide(originalPrice, 2, RoundingMode.HALF_UP)
   }
 
   fun isOnSale(): Boolean = salePrice < originalPrice
