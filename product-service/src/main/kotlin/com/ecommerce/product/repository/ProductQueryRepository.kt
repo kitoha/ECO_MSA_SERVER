@@ -7,6 +7,7 @@ import com.ecommerce.product.entity.QProduct
 import com.ecommerce.product.enums.ProductStatus
 import com.querydsl.core.types.Projections
 import com.querydsl.core.types.dsl.BooleanExpression
+import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
@@ -44,19 +45,24 @@ class ProductQueryRepository(
   fun getProductStatsByCategory(): List<CategoryProductStats> {
     return queryFactory
       .select(
-        Projections.constructor(
-          CategoryProductStats::class.java,
-          category.id,
-          category.name,
-          product.count(),
-          product.salePrice.avg()
-        )
+        category.id,
+        category.name,
+        product.count(),
+        product.salePrice.avg()
       )
       .from(product)
       .join(product.category, category)
       .where(notDeleted())
       .groupBy(category.id, category.name)
       .fetch()
+      .map { tuple ->
+        CategoryProductStats(
+          categoryId = tuple.get(category.id)!!,
+          categoryName = tuple.get(category.name)!!,
+          productCount = tuple.get(product.count())!!,
+          averagePrice = tuple.get(product.salePrice.avg())?.let { BigDecimal.valueOf(it) } ?: BigDecimal.ZERO
+        )
+      }
   }
 
   private fun notDeleted(): BooleanExpression {

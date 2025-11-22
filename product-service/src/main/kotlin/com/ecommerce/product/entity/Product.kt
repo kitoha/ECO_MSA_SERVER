@@ -51,7 +51,7 @@ class Product (
     cascade = [CascadeType.ALL],
     orphanRemoval = true
   )
-  private val _images: MutableList<ProductImage> = mutableListOf()
+  protected val _images: MutableList<ProductImage> = mutableListOf()
 
   val images: List<ProductImage>
     get() = _images.toList()

@@ -7,6 +7,7 @@ kotlinxCoroutines = "1.8.0"
 querydsl = "5.1.0"
 kotest = "5.9.1"
 mockk = "1.13.12"
+testcontainers = "1.20.4"
 
 [libraries]
 # Spring Boot
@@ -40,6 +41,11 @@ kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-sp
 
 # Mockk
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+# TestContainers
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }

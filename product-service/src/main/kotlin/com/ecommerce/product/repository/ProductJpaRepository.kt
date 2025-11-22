@@ -12,7 +12,7 @@ interface ProductJpaRepository : JpaRepository<Product, Long> {
   @Query("""
         SELECT DISTINCT p FROM Product p
         LEFT JOIN FETCH p.category c
-        LEFT JOIN FETCH p.images i
+        LEFT JOIN FETCH p._images i
         WHERE p.id = :id AND p.deletedAt IS NULL
     """)
   fun findByIdWithDetails(@Param("id") id: Long): Product?
@@ -20,7 +20,7 @@ interface ProductJpaRepository : JpaRepository<Product, Long> {
   @Query("""
         SELECT DISTINCT p FROM Product p
         LEFT JOIN FETCH p.category c
-        LEFT JOIN FETCH p.images i
+        LEFT JOIN FETCH p._images i
         WHERE p.deletedAt IS NULL
         ORDER BY p.createdAt DESC
     """)
@@ -29,7 +29,7 @@ interface ProductJpaRepository : JpaRepository<Product, Long> {
   @Query("""
         SELECT DISTINCT p FROM Product p
         LEFT JOIN FETCH p.category c
-        LEFT JOIN FETCH p.images i
+        LEFT JOIN FETCH p._images i
         WHERE c.id = :categoryId AND p.deletedAt IS NULL
         ORDER BY p.createdAt DESC
     """)

@@ -42,6 +42,12 @@ dependencies {
 
   // Mockk
   testImplementation(libs.mockk)
+
+  // TestContainers
+  testImplementation(platform(libs.testcontainers.bom))
+  testImplementation(libs.testcontainers.postgresql)
+  testImplementation(libs.testcontainers.junit.jupiter)
+  testImplementation("org.springframework.boot:spring-boot-testcontainers")
 }
 
 kotlin {
