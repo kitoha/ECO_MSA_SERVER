@@ -8,7 +8,6 @@ jobs:
   ai-review:
     name: AI Code Review
     runs-on: ubuntu-latest
-    # Draft PR이 아니고 같은 리포지토리에서 온 PR일 때만 실행
     if: |
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository
