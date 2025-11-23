@@ -53,3 +53,47 @@ dependencies {
 kotlin {
   jvmToolchain(21)
 }
+
+sourceSets {
+  create("integrationTest") {
+    kotlin {
+      srcDir("src/integrationTest/kotlin")
+      compileClasspath += sourceSets["main"].output + sourceSets["test"].output
+      runtimeClasspath += sourceSets["main"].output + sourceSets["test"].output
+    }
+    resources {
+      srcDir("src/integrationTest/resources")
+    }
+  }
+}
+
+configurations {
+  getByName("integrationTestImplementation") {
+    extendsFrom(configurations["testImplementation"])
+  }
+  getByName("integrationTestRuntimeOnly") {
+    extendsFrom(configurations["testRuntimeOnly"])
+  }
+}
+
+tasks {
+  register<Test>("integrationTest") {
+    description = "Runs integration tests."
+    group = "verification"
+
+    testClassesDirs = sourceSets["integrationTest"].output.classesDirs
+    classpath = sourceSets["integrationTest"].runtimeClasspath
+
+    shouldRunAfter("test")
+
+    useJUnitPlatform()
+  }
+
+  named("check") {
+    dependsOn("integrationTest")
+  }
+
+  named<ProcessResources>("processIntegrationTestResources") {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+  }
+}
