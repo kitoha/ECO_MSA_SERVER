@@ -8,6 +8,92 @@ Domain-Driven Design(DDD)과 마이크로서비스 아키텍처를 적용한 확
 상품 관리, 장바구니, 주문, 결제 처리 등 핵심 이커머스 기능을 독립적인 서비스로 구성하여 높은 확장성과 유지보수성을 제공합니다.
 ---
 
+## 📡 API 엔드포인트
+
+### API Gateway 라우팅
+모든 외부 요청은 API Gateway (`http://localhost:8080`)를 통해 라우팅됩니다.
+
+| 서비스 | 포트 | 엔드포인트 | 설명 |
+|--------|------|------------|------|
+| **Product Service** | 8081 | `/api/v1/products/**` | 상품 관리 |
+| **Cart Service** | 8082 | `/api/v1/carts/**` | 장바구니 관리 |
+| **Order Service** | 8083 | `/api/v1/orders/**` | 주문 관리 |
+| **Payment Service** | 8084 | `/api/v1/payments/**` | 결제 처리 |
+| **Search Service** | 8085 | `/api/v1/search/**` | 검색 |
+| **Inventory Service** | 8086 | `/api/v1/inventory/**` | 재고 관리 |
+
+### Product Service API
+**Base URL**: `http://localhost:8080/api/v1/products`
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| `GET` | `/` | 전체 상품 목록 조회 |
+| `GET` | `/{id}` | 상품 상세 조회 |
+| `POST` | `/` | 상품 등록 |
+| `POST` | `/search` | 상품 검색 |
+| `PUT` | `/{id}` | 상품 수정 |
+| `DELETE` | `/{id}` | 상품 삭제 |
+
+**Category API**:
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| `GET` | `/api/v1/categories/stats` | 카테고리별 상품 통계 |
+
+### Cart Service API
+**Base URL**: `http://localhost:8080/api/v1/carts`
+
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| `GET` | `/me` | 내 장바구니 조회 | Required |
+| `POST` | `/me/items` | 장바구니에 상품 추가 | Required |
+| `PATCH` | `/me/items/{itemId}` | 장바구니 상품 수량 변경 | Required |
+| `DELETE` | `/me/items/{itemId}` | 장바구니 상품 삭제 | Required |
+| `DELETE` | `/me` | 장바구니 비우기 | Required |
+
+### Order Service API
+**Base URL**: `http://localhost:8080/api/v1/orders`
+
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| `POST` | `/` | 주문 생성 | Required |
+| `GET` | `/` | 주문 목록 조회 | Required |
+| `GET` | `/{orderId}` | 주문 상세 조회 | Required |
+| `POST` | `/{orderId}/cancel` | 주문 취소 | Required |
+
+### Payment Service API
+**Base URL**: `http://localhost:8080/api/v1/payments`
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| `POST` | `/` | 결제 요청 (Stripe) |
+| `GET` | `/{paymentKey}` | 결제 상태 조회 |
+| `POST` | `/webhook/stripe` | Stripe 웹훅 처리 |
+| `POST` | `/{paymentKey}/refund` | 환불 요청 |
+
+### Search Service API
+**Base URL**: `http://localhost:8080/api/v1/search`
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| `GET` | `/products` | 상품 검색 (OpenSearch) |
+| `GET` | `/autocomplete` | 자동완성 검색어 제안 |
+
+### Inventory Service API
+**Base URL**: `http://localhost:8080/api/v1/inventory`
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| `GET` | `/products/{productId}` | 특정 상품의 재고 조회 |
+| `GET` | `/products` | 여러 상품의 재고 일괄 조회 |
+| `POST` | `/reserve` | 재고 예약 (주문 시) |
+| `POST` | `/release` | 재고 예약 해제 (주문 취소 시) |
+| `PUT` | `/products/{productId}` | 재고 수량 조정 |
+| `GET` | `/products/{productId}/history` | 재고 변동 이력 조회 |
+
+> 상세 API 스펙은 [docs/api_docs.md](docs/api_docs.md) 참고
+
+---
+
 ## 🏗️ Architecture 구조
 
 ### 서비스 구성
@@ -22,21 +108,21 @@ Domain-Driven Design(DDD)과 마이크로서비스 아키텍처를 적용한 확
          │   Service Discovery           │
          └───────────────┬───────────────┘
                          │
-    ┌────────────────────┼────────────────────┐
-    │                    │                    │
-┌───▼────┐       ┌───────▼──────┐     ┌──────▼─────┐
-│Product │       │     Cart     │     │   Order    │
-│ (8081) │       │    (8082)    │     │  (8083)    │
-└────────┘       └──────────────┘     └────────────┘
-    │                    │                    │
-    └────────────────────┼────────────────────┘
-                         │
-                 ┌───────▼──────┐
+    ┌────────────────────┼────────────────────┬───────────────┐
+    │                    │                    │               │
+┌───▼────┐       ┌───────▼──────┐     ┌──────▼─────┐  ┌─────▼────┐
+│Product │       │     Cart     │     │   Order    │  │Inventory │
+│ (8081) │◄──────┤    (8082)    │     │  (8083)    │  │ (8086)   │
+└────┬───┘       └──────────────┘     └────┬───────┘  └────┬─────┘
+     │                                      │               │
+     └──────────────────┬───────────────────┴───────────────┘
+                        │
+                 ┌──────▼───────┐
                  │   Payment    │
                  │    (8084)    │
-                 └──────────────┘
-                         │
-                 ┌───────▼──────┐
+                 └──────┬───────┘
+                        │
+                 ┌──────▼───────┐
                  │    Search    │
                  │    (8085)    │
                  └──────────────┘
@@ -57,6 +143,7 @@ ECO_MSA_SERVER/
 ├── order-service/              # 주문 관리 (8083)
 ├── payment-service/            # 결제 처리 (8084)
 ├── search-service/             # 검색 최적화 (8085)
+├── inventory-service/          # 재고 관리 (8086)
 ├── common-domain/              # 공통 도메인 모델
 ├── common-event/               # 이벤트 스키마
 └── common-utils/               # 공통 유틸리티
@@ -97,24 +184,27 @@ ECO_MSA_SERVER/
 ## 📅 구현 로드맵
 
 ### Phase 1: 코어 도메인 구현 (현재)
-**목표**: 상품, 장바구니, 결제 도메인 완성
+**목표**: 상품, 장바구니, 재고, 결제 도메인 완성
 
-#### Week 1-2: Product Service
+#### Week 1-2: Product Service ✅
 - [x] DDD 레이어 구조 설계
-- [ ] Product 도메인 모델 (Entity, VO, Repository)
-- [ ] CRUD API 구현
-- [ ] PostgreSQL 연동
-- [ ] Eureka Client 등록
+- [x] Product 도메인 모델 (Entity, VO, Repository)
+- [x] CRUD API 구현
+- [x] PostgreSQL 연동
+- [x] Eureka Client 등록
 
-#### Week 3-4: Cart Service
+#### Week 3-4: Cart & Inventory Service
 - [ ] Cart 도메인 모델
 - [ ] Product Service 연동 (FeignClient)
 - [ ] 장바구니 관리 API
+- [ ] Inventory 도메인 모델
+- [ ] 재고 예약/해제 로직
+- [ ] 재고 변동 이력 추적
 
 #### Week 5-6: Order & Payment Service
 - [ ] Order 생성 로직
 - [ ] Payment 상태 관리
-- [ ] Product 재고 차감 로직
+- [ ] Inventory 재고 차감 로직 (이벤트 기반)
 
 ### Phase 2: PG 결제 연동
 **목표**: Stripe 결제 시스템 통합
