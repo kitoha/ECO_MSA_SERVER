@@ -37,6 +37,7 @@ dependencies {
   testImplementation(libs.kotlin.test.junit5)
   testRuntimeOnly(libs.junit.platform.launcher)
   testImplementation(libs.kotlin.test)
+  implementation(libs.spring.boot.starter.validation)
 
   // Kotest
   testImplementation(libs.kotest.runner.junit5)

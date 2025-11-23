@@ -1,5 +1,6 @@
 package com.ecommerce.product.repository
 
+import com.ecommerce.product.config.JpaConfig
 import com.ecommerce.product.entity.Category
 import com.ecommerce.product.entity.Product
 import com.ecommerce.product.enums.CategoryStatus
@@ -26,7 +27,7 @@ import java.math.BigDecimal
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
-@Import(TestJpaConfig::class)
+@Import(TestJpaConfig::class, JpaConfig::class)
 class ProductQueryRepositoryIntegrationTest(
     private val productQueryRepository: ProductQueryRepository,
     private val categoryRepository: CategoryRepository,
