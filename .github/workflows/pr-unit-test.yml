@@ -1,16 +1,12 @@
-name: SonarCloud Analysis
+name: PR Unit Tests
 
-# This workflow runs only on push to main branches
-# PR analysis is handled by ci.yml
 on:
-  push:
-    branches:
-      - master
-      - develop
+  pull_request:
+    types: [ opened, synchronize, reopened, ready_for_review ]
 
 jobs:
-  sonarcloud:
-    name: SonarCloud Code Analysis
+  unit-test:
+    name: Build & Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -37,11 +33,16 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build and Test
-        run: ./gradlew clean build jacocoTestReport
+      - name: Build and Run Unit Tests
+        run: ./gradlew clean build test -x integrationTest
 
-      - name: SonarCloud Scan
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonar
+      - name: Upload build artifacts
+        if: github.event.pull_request.draft == false
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ github.run_id }}
+          path: |
+            **/build/libs/
+            **/build/classes/
+            **/build/test-results/test/
+          retention-days: 1
