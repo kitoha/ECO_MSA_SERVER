@@ -33,6 +33,15 @@ subprojects {
 						html.required.set(true)
 					}
 
+					val integrationTestTask = tasks.findByName("integrationTest")
+					if (integrationTestTask != null) {
+						executionData.setFrom(
+							fileTree(layout.buildDirectory) {
+								include("jacoco/test.exec", "jacoco/integrationTest.exec")
+							}
+						)
+					}
+
 					classDirectories.setFrom(
 						files(classDirectories.files.map {
 							fileTree(it) {

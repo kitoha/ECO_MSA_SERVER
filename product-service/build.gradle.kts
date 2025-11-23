@@ -1,3 +1,7 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+
 plugins {
   alias(libs.plugins.spring.boot)
   alias(libs.plugins.spring.dependency.management)
@@ -87,6 +91,10 @@ tasks {
     shouldRunAfter("test")
 
     useJUnitPlatform()
+
+    extensions.configure(JacocoTaskExtension::class) {
+      setDestinationFile(layout.buildDirectory.file("jacoco/integrationTest.exec").get().asFile)
+    }
   }
 
   named("check") {
