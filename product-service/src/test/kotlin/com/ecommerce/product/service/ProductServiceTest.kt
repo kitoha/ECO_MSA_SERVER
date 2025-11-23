@@ -14,6 +14,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -26,6 +27,10 @@ class ProductServiceTest : BehaviorSpec({
     val productRepository = mockk<ProductRepository>()
     val categoryRepository = mockk<CategoryRepository>()
     val productService = ProductService(productRepository, categoryRepository)
+
+    beforeEach {
+        clearMocks(productRepository, categoryRepository, answers = false)
+    }
 
     given("ProductService의 registerProduct 메서드가 주어졌을 때") {
         val category = Category(
