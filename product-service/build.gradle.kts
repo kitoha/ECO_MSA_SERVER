@@ -29,14 +29,22 @@ dependencies {
   implementation(libs.spring.boot.starter.data.jpa)
   implementation(libs.kotlin.reflect)
   implementation(libs.postgresql)
+
+  // Flyway
+  implementation(libs.flyway.core)
+  implementation(libs.flyway.database.postgresql)
+
+  // QueryDSL
   implementation("com.querydsl:querydsl-core:${libs.versions.querydsl.get()}")
   implementation("com.querydsl:querydsl-jpa:${libs.versions.querydsl.get()}:jakarta")
   kapt("com.querydsl:querydsl-apt:${libs.versions.querydsl.get()}:jakarta")
+
+  implementation(libs.spring.boot.starter.validation)
+
   testImplementation(libs.spring.boot.starter.test)
   testImplementation(libs.kotlin.test.junit5)
   testRuntimeOnly(libs.junit.platform.launcher)
   testImplementation(libs.kotlin.test)
-  implementation(libs.spring.boot.starter.validation)
 
   // Kotest
   testImplementation(libs.kotest.runner.junit5)

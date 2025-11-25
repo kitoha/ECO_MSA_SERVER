@@ -4,11 +4,12 @@ import com.ecommerce.inventory.entity.audit.BaseEntity
 import com.ecommerce.inventory.enums.InventoryChangeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
+import jakarta.persistence.Index
 import jakarta.persistence.Table
 
 /*
@@ -27,17 +28,24 @@ CREATE TABLE inventory_history (
 );
  */
 @Entity
-@Table(name = "inventory_history")
+@Table(
+  name = "inventory_history",
+  indexes = [
+    Index(name = "idx_inventory_history_inventory_id", columnList = "inventory_id"),
+    Index(name = "idx_inventory_history_created_at", columnList = "created_at"),
+    Index(name = "idx_inventory_history_change_type", columnList = "change_type")
+  ]
+)
 class InventoryHistory(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long? = null,
 
-  @ManyToOne
-  @JoinColumn(name = "inventory_id", nullable = false)
-  val inventory: Inventory,
+  @Column(name = "inventory_id", nullable = false)
+  val inventoryId: Long,
 
-  @Column(name = "change_type", nullable = false)
+  @Enumerated(EnumType.STRING)
+  @Column(name = "change_type", nullable = false, length = 20)
   val changeType: InventoryChangeType,
 
   @Column(name = "quantity", nullable = false)
@@ -49,10 +57,10 @@ class InventoryHistory(
   @Column(name = "after_quantity", nullable = false)
   val afterQuantity: Int,
 
-  @Column(name = "reason")
+  @Column(name = "reason", length = 100)
   val reason: String? = null,
 
-  @Column(name = "reference_id")
+  @Column(name = "reference_id", length = 100)
   val referenceId: String? = null
 ) : BaseEntity(){
 }

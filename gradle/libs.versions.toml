@@ -8,6 +8,7 @@ querydsl = "5.1.0"
 kotest = "5.9.1"
 mockk = "1.13.12"
 testcontainers = "1.20.4"
+flyway = "10.22.1"
 
 [libraries]
 # Spring Boot
@@ -27,6 +28,8 @@ kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 
 # Database
 postgresql = { module = "org.postgresql:postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 
 # Jackson
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
