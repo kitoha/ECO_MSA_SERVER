@@ -7,6 +7,7 @@ CREATE TABLE inventories (
     total_quantity INT NOT NULL DEFAULT 0,      -- 총 재고 (available + reserved)
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     version INT NOT NULL DEFAULT 0  -- 낙관적 락
 );
 

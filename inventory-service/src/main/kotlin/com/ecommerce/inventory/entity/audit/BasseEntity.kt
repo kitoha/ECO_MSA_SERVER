@@ -19,19 +19,16 @@ abstract class BaseEntity (
   @Column(nullable = false)
   var updatedAt: LocalDateTime? = null,
 
-  @Column(nullable = false)
-  var deleted: Boolean = false,
-
   @Column
   var deletedAt: LocalDateTime? = null
 ){
   fun softDelete() {
-    this.deleted = true
     this.deletedAt = LocalDateTime.now()
   }
 
   fun restore() {
-    this.deleted = false
     this.deletedAt = null
   }
+
+  fun isDeleted(): Boolean = deletedAt != null
 }

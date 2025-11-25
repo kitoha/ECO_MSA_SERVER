@@ -4,7 +4,10 @@ CREATE TABLE product_images (
     product_id BIGINT NOT NULL,
     image_url VARCHAR(500) NOT NULL,
     display_order INT NOT NULL DEFAULT 0,
+    is_thumbnail BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 

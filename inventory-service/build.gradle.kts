@@ -43,6 +43,10 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
+  // Actuator & Prometheus
+  implementation("org.springframework.boot:spring-boot-starter-actuator")
+  implementation("io.micrometer:micrometer-registry-prometheus")
+
   testImplementation(libs.spring.boot.starter.test)
   testImplementation(libs.kotlin.test.junit5)
   testRuntimeOnly(libs.junit.platform.launcher)

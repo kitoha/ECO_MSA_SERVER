@@ -9,6 +9,8 @@ CREATE TABLE inventory_history (
     reason VARCHAR(100),                -- 변동 사유
     reference_id VARCHAR(100),          -- 참조 ID (주문번호, 입고번호 등)
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     FOREIGN KEY (inventory_id) REFERENCES inventories(id) ON DELETE CASCADE
 );
 

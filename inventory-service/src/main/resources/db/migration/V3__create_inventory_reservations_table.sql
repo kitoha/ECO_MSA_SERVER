@@ -8,6 +8,7 @@ CREATE TABLE inventory_reservations (
     expires_at TIMESTAMP NOT NULL,  -- 예약 만료 시간 (15분)
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     FOREIGN KEY (inventory_id) REFERENCES inventories(id) ON DELETE CASCADE
 );
 
