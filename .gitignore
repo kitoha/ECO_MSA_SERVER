@@ -41,3 +41,12 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Docker ###
+.env
+docker-compose.override.yml
+
+### Database ###
+*.db
+*.sqlite
+*.sqlite3
