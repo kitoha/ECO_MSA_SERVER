@@ -19,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.ZoneId
 
+/**
+ * 재고 예약 서비스(재고 예약 생성, 확정, 취소 처리) - 결제 전 재고 확보 목적
+ */
 @Service
 class InventoryReservationService(
   private val inventoryRepository: InventoryRepository,

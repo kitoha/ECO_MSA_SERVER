@@ -1,22 +1,25 @@
 package com.ecommerce.inventory.service
 
-import com.ecommerce.inventory.entity.Inventory
-import com.ecommerce.inventory.entity.InventoryHistory
 import com.ecommerce.inventory.enums.InventoryChangeType
 import com.ecommerce.inventory.repository.Inventory.InventoryRepository
-import com.ecommerce.inventory.repository.InventoryHistory.InventoryHistoryRepository
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * 재고 관리 서비스 (입고 및 출고 처리)
+ */
 @Service
 class InventoryManagerService(
   private val inventoryRepository: InventoryRepository,
-  private val inventoryHistoryRepository: InventoryHistoryRepository
+  private val inventoryHistoryService: InventoryHistoryService
 ) {
 
+  /**
+   * 재고 조정 함수
+   */
   @Transactional
   @Retryable(
     value = [OptimisticLockingFailureException::class],
@@ -44,38 +47,15 @@ class InventoryManagerService(
 
     inventoryRepository.save(inventory)
 
-    inventory.id?.let { inventoryId ->
-      saveHistory(
-        inventoryId = inventoryId,
-        changeType = inventoryChangeType,
-        quantity = quantity,
-        beforeQuantity = beforeQuantity,
-        afterQuantity = inventory.availableQuantity,
-        reason = reason,
-        referenceId = referenceId
-      )
-    }
-  }
-
-  fun saveHistory(
-    inventoryId: Long,
-    changeType: InventoryChangeType,
-    quantity: Int,
-    beforeQuantity: Int,
-    afterQuantity: Int,
-    reason: String?,
-    referenceId: String? = null
-  ) {
-    val history = InventoryHistory(
-      inventoryId = inventoryId,
-      changeType = changeType,
+    inventoryHistoryService.recordChange(
+      inventoryId = inventory.id!!,
+      changeType = inventoryChangeType,
       quantity = quantity,
       beforeQuantity = beforeQuantity,
-      afterQuantity = afterQuantity,
+      afterQuantity = inventory.availableQuantity,
       reason = reason,
       referenceId = referenceId
     )
-    inventoryHistoryRepository.save(history)
   }
 
   @Transactional
@@ -94,17 +74,15 @@ class InventoryManagerService(
 
     inventoryRepository.save(inventory)
 
-    inventory.id?.let { inventoryId ->
-      saveHistory(
-        inventoryId = inventoryId,
-        changeType = InventoryChangeType.RESERVE,
-        quantity = quantity,
-        beforeQuantity = beforeQuantity,
-        afterQuantity = inventory.availableQuantity,
-        reason = reason,
-        referenceId = referenceId
-      )
-    }
+    inventoryHistoryService.recordChange(
+      inventoryId = inventory.id!!,
+      changeType = InventoryChangeType.RESERVE,
+      quantity = quantity,
+      beforeQuantity = beforeQuantity,
+      afterQuantity = inventory.availableQuantity,
+      reason = reason,
+      referenceId = referenceId
+    )
   }
 
   @Transactional
@@ -123,16 +101,14 @@ class InventoryManagerService(
 
     inventoryRepository.save(inventory)
 
-    inventory.id?.let { inventoryId ->
-      saveHistory(
-        inventoryId = inventoryId,
-        changeType = InventoryChangeType.RELEASE,
-        quantity = quantity,
-        beforeQuantity = beforeQuantity,
-        afterQuantity = inventory.availableQuantity,
-        reason = reason,
-        referenceId = referenceId
-      )
-    }
+    inventoryHistoryService.recordChange(
+      inventoryId = inventory.id!!,
+      changeType = InventoryChangeType.RELEASE,
+      quantity = quantity,
+      beforeQuantity = beforeQuantity,
+      afterQuantity = inventory.availableQuantity,
+      reason = reason,
+      referenceId = referenceId
+    )
   }
 }

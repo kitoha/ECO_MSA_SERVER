@@ -8,6 +8,9 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.Instant
 
+/**
+ * 만료된 재고 예약을 주기적으로 확인하고 취소 이벤트를 발행하는 스케줄러 서비스
+ */
 @Service
 class InventorySchedulerService(
     private val redisTemplate: RedisTemplate<String, String>,
@@ -29,9 +32,11 @@ class InventorySchedulerService(
         val now = Instant.now().epochSecond.toDouble()
 
         try {
-            // Redis Sorted Set에서 현재 시간보다 이전(만료된) 예약 ID 조회
+            /**
+             * 예약 생성 시 Redis Sorted Set에 저장된 만료된 예약 ID 조회
+             */
             val expiredReservationIds = redisTemplate.opsForZSet()
-                .rangeByScore(RESERVATION_EXPIRY_KEY, 0.0, now, 0, 100) // 한 번에 최대 100개
+                .rangeByScore(RESERVATION_EXPIRY_KEY, 0.0, now, 0, 100)
 
             if (expiredReservationIds.isNullOrEmpty()) {
                 logger.debug("No expired reservations found")
@@ -40,6 +45,10 @@ class InventorySchedulerService(
 
             logger.info("Found ${expiredReservationIds.size} expired reservations to process")
 
+            /**
+             * 만료된 예약 ID에 대해 취소 이벤트 발행 및 Redis에서 제거 (100개씩 처리)
+             * 주문을 했지만 결제가 이루어지지 않은 예약 건에 대해 재고를 해제하기 위함
+             */
             expiredReservationIds.forEach { reservationIdStr ->
                 try {
                     val reservationId = reservationIdStr.toLong()

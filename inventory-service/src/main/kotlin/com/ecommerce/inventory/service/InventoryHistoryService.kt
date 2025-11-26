@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * 재고 변경 이력을 관리하는 서비스
+ */
 @Service
 class InventoryHistoryService(
     private val inventoryHistoryRepository: InventoryHistoryRepository
