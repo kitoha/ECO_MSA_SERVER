@@ -77,4 +77,11 @@ class Inventory (
     this.reservedQuantity -= amount
     this.availableQuantity += amount
   }
+
+  fun confirmReservedStock(amount: Int) {
+    if (amount <= 0) throw IllegalArgumentException("확정 수량은 양수여야 합니다.")
+    if (this.reservedQuantity < amount) throw IllegalArgumentException("예약된 재고가 부족합니다.")
+    this.reservedQuantity -= amount
+    this.totalQuantity -= amount
+  }
 }

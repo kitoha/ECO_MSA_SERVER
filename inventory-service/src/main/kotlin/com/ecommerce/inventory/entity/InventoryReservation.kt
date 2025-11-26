@@ -1,7 +1,7 @@
 package com.ecommerce.inventory.entity
 
 import com.ecommerce.inventory.entity.audit.BaseEntity
-import com.ecommerce.inventory.enums.InventoryReservationStatus
+import com.ecommerce.inventory.enums.ReservationStatus
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -53,9 +53,34 @@ class InventoryReservation(
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  var status: InventoryReservationStatus,
+  var status: ReservationStatus,
 
   @Column(name = "expires_at", nullable = false)
   val expiresAt: LocalDateTime
 ) : BaseEntity(){
+
+  fun isExpired(): Boolean {
+    return expiresAt.isBefore(java.time.LocalDateTime.now())
+  }
+
+  fun isActive(): Boolean {
+    return status == ReservationStatus.ACTIVE && !isExpired()
+  }
+
+  fun markCompleted() {
+    if (status != ReservationStatus.ACTIVE) {
+      throw IllegalStateException("Only ACTIVE reservations can be completed. Current status: $status")
+    }
+    if (isExpired()) {
+      throw IllegalStateException("Cannot complete expired reservation")
+    }
+    this.status = ReservationStatus.COMPLETED
+  }
+
+  fun markCancelled() {
+    if (status != ReservationStatus.ACTIVE) {
+      throw IllegalStateException("Only ACTIVE reservations can be cancelled. Current status: $status")
+    }
+    this.status = ReservationStatus.CANCELLED
+  }
 }

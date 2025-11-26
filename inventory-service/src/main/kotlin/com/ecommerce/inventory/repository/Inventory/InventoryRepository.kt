@@ -17,4 +17,10 @@ class InventoryRepository (
     inventoryJpaRepository.save(inventory)
   }
 
+  fun findById(inventoryId: Long) : Inventory {
+    return inventoryJpaRepository.findById(inventoryId).orElseThrow {
+      IllegalArgumentException("Inventory not found: $inventoryId")
+    }
+  }
+
 }

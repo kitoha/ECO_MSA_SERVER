@@ -1,5 +1,5 @@
 package com.ecommerce.inventory.enums
 
-enum class InventoryReservationStatus {
+enum class ReservationStatus {
   ACTIVE, COMPLETED, CANCELLED
 }
