@@ -13,6 +13,10 @@ class InventoryRepository (
     return inventoryJpaRepository.findByProductId(productId)
   }
 
+  fun findByProductIdIn(productIds: List<String>) : List<Inventory> {
+    return inventoryJpaRepository.findByProductIdIn(productIds)
+  }
+
   fun save(inventory: Inventory) {
     inventoryJpaRepository.save(inventory)
   }

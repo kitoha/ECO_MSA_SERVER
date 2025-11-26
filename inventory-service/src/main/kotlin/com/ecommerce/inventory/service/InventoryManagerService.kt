@@ -18,6 +18,19 @@ class InventoryManagerService(
 ) {
 
   /**
+   * 재고 조회 (단일 상품)
+   */
+  fun getInventoryByProductId(productId: String) =
+    inventoryRepository.findByProductId(productId)
+      ?: throw IllegalArgumentException("Product not found: $productId")
+
+  /**
+   * 재고 조회 (여러 상품)
+   */
+  fun getInventoriesByProductIds(productIds: List<String>) =
+    inventoryRepository.findByProductIdIn(productIds)
+
+  /**
    * 재고 조정 함수
    */
   @Transactional
