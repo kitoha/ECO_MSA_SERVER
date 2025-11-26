@@ -47,6 +47,16 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("io.micrometer:micrometer-registry-prometheus")
 
+  // Kafka
+  implementation(libs.spring.kafka)
+
+  // Redis
+  implementation(libs.spring.boot.starter.data.redis)
+
+  // ShedLock
+  implementation(libs.shedlock.spring)
+  implementation(libs.shedlock.provider.redis.spring)
+
   testImplementation(libs.spring.boot.starter.test)
   testImplementation(libs.kotlin.test.junit5)
   testRuntimeOnly(libs.junit.platform.launcher)
@@ -65,7 +75,9 @@ dependencies {
   testImplementation(platform(libs.testcontainers.bom))
   testImplementation(libs.testcontainers.postgresql)
   testImplementation(libs.testcontainers.junit.jupiter)
+  testImplementation(libs.testcontainers.kafka)
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
+  testImplementation("org.springframework.kafka:spring-kafka-test")
 }
 
 kotlin {

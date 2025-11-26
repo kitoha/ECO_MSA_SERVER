@@ -8,7 +8,7 @@ querydsl = "5.1.0"
 kotest = "5.9.1"
 mockk = "1.13.12"
 testcontainers = "1.20.4"
-# flyway 버전은 Spring Boot dependency management에 위임
+shedlock = "5.16.0"
 
 [libraries]
 # Spring Boot
@@ -50,6 +50,17 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter" }
+testcontainers-kafka = { module = "org.testcontainers:kafka" }
+
+# Kafka
+spring-kafka = { module = "org.springframework.kafka:spring-kafka" }
+
+# Redis
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
+
+# ShedLock
+shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.ref = "shedlock" }
+shedlock-provider-redis-spring = { module = "net.javacrumbs.shedlock:shedlock-provider-redis-spring", version.ref = "shedlock" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }

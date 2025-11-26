@@ -29,6 +29,8 @@ out/
 ### Document
 /docs
 
+/TEST_INFO.md
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/

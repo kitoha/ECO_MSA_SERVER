@@ -12,4 +12,12 @@ class InventoryHistoryRepository(
   fun save(inventoryHistory: InventoryHistory) {
     inventoryHistoryJpaRepository.save(inventoryHistory)
   }
+
+  fun findByInventoryId(inventoryId: Long): List<InventoryHistory> {
+    return inventoryHistoryJpaRepository.findByInventoryIdOrderByCreatedAtDesc(inventoryId)
+  }
+
+  fun findByReferenceId(referenceId: String): List<InventoryHistory> {
+    return inventoryHistoryJpaRepository.findByReferenceIdOrderByCreatedAtDesc(referenceId)
+  }
 }
