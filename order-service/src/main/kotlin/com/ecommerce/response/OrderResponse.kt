@@ -1,5 +1,6 @@
 package com.ecommerce.response
 
+import com.ecommerce.dto.OrderItemDto
 import com.ecommerce.entity.Order
 import com.ecommerce.enums.OrderStatus
 import java.math.BigDecimal
@@ -24,6 +25,7 @@ data class OrderResponse(
 ) {
   companion object {
     fun from(order: Order): OrderResponse {
+      val orderItemDtos = order.items.map { OrderItemDto.from(it) }
       return OrderResponse(
         id = order.id,
         orderNumber = order.orderNumber,
@@ -33,7 +35,7 @@ data class OrderResponse(
         shippingAddress = order.shippingAddress,
         shippingName = order.shippingName,
         shippingPhone = order.shippingPhone,
-        items = order.items.map { OrderItemResponse.from(it) },
+        items = orderItemDtos.map { OrderItemResponse.from(it) },
         orderedAt = order.orderedAt,
         createdAt = order.createdAt,
         updatedAt = order.updatedAt
