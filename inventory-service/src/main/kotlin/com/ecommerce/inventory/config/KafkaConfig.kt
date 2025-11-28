@@ -32,7 +32,6 @@ class KafkaConfig {
     @Value("\${spring.kafka.consumer.group-id}")
     private lateinit var groupId: String
 
-    // ObjectMapper 설정
     @Bean
     fun kafkaObjectMapper(): ObjectMapper {
         return ObjectMapper().apply {
@@ -42,7 +41,6 @@ class KafkaConfig {
         }
     }
 
-    // Producer Configuration
     @Bean
     fun producerFactory(objectMapper: ObjectMapper): ProducerFactory<String, Any> {
         val configProps = mapOf(
@@ -65,7 +63,6 @@ class KafkaConfig {
         return KafkaTemplate(producerFactory)
     }
 
-    // Consumer Configuration
     @Bean
     fun consumerFactory(objectMapper: ObjectMapper): ConsumerFactory<String, Any> {
         val configProps = mapOf(
@@ -75,7 +72,8 @@ class KafkaConfig {
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
             ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
-            JsonDeserializer.TRUSTED_PACKAGES to "*",
+            // 보안: 신뢰할 수 있는 패키지만 명시적으로 지정 (RCE 방지)
+            JsonDeserializer.TRUSTED_PACKAGES to "com.ecommerce.inventory.event",
             JsonDeserializer.TYPE_MAPPINGS to "reservationCreated:com.ecommerce.inventory.event.ReservationCreatedEvent," +
                     "reservationCancelled:com.ecommerce.inventory.event.ReservationCancelledEvent," +
                     "reservationConfirmed:com.ecommerce.inventory.event.ReservationConfirmedEvent"
@@ -98,7 +96,6 @@ class KafkaConfig {
         return factory
     }
 
-    // Topic Definitions
     @Bean
     fun reservationCreatedTopic(): NewTopic {
         return TopicBuilder.name("reservation-created")
