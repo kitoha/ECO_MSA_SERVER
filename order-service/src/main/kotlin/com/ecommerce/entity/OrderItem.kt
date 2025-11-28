@@ -1,42 +1,40 @@
 package com.ecommerce.entity
 
 import com.ecommerce.entity.audit.BaseEntity
-import jakarta.persistence.Column
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
+import jakarta.persistence.*
+import java.math.BigDecimal
 
-/*
-    id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT NOT NULL,
-    product_id VARCHAR(100) NOT NULL,
-    product_name VARCHAR(255) NOT NULL,
-    price DECIMAL(19, 2) NOT NULL,  -- 주문 시점의 가격 (스냅샷)
-    quantity INT NOT NULL,
-    subtotal DECIMAL(19, 2) NOT NULL,  -- price * quantity
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+/**
+ * 주문 항목 엔티티
  */
+@Entity
+@Table(name = "order_items")
 class OrderItem(
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val id: Long,
-
-  @Column(name = "order_id", nullable = false)
-  val orderId: Long,
-
-  @Column(name = "product_id", nullable = false)
+  @Column(name = "product_id", nullable = false, length = 100)
   val productId: String,
 
   @Column(name = "product_name", nullable = false)
   val productName: String,
 
-  @Column(name = "price", nullable = false)
-  val price: Int,
+  @Column(name = "price", nullable = false, precision = 19, scale = 2)
+  val price: BigDecimal,
 
   @Column(name = "quantity", nullable = false)
   val quantity: Int,
 ) : BaseEntity() {
-  val subtotal: Int
-    get() = price * quantity
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  val id: Long = 0L
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "order_id", nullable = false)
+  lateinit var order: Order
+
+  val subtotal: BigDecimal
+    get() = price.multiply(BigDecimal(quantity))
+
+  override fun toString(): String {
+    return "OrderItem(id=$id, productId='$productId', productName='$productName', " +
+      "price=$price, quantity=$quantity, subtotal=$subtotal)"
+  }
 }
