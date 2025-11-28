@@ -82,7 +82,7 @@ class InventoryController(
       quantity = reservation.quantity,
       status = reservation.status,
       expiresAt = reservation.expiresAt,
-      createdAt = reservation.createdAt!!
+      createdAt = reservation.createdAt
     )
     return ResponseEntity.status(HttpStatus.CREATED).body(response)
   }

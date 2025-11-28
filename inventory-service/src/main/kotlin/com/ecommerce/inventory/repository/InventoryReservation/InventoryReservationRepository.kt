@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository
 @Repository
 class InventoryReservationRepository(
   private val inventoryReservationJpaRepository: InventoryReservationJpaRepository,
-  private val inventoryReservationQueryRepository: InventoryReservationQueryRepository
 ) {
 
   fun save(reservation: InventoryReservation) : InventoryReservation {

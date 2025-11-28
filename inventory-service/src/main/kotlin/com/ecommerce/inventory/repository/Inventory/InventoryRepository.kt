@@ -5,8 +5,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class InventoryRepository (
-  private val inventoryJpaRepository: InventoryJpaRepository,
-  private val inventoryQueryRepository: InventoryQueryRepository
+  private val inventoryJpaRepository: InventoryJpaRepository
 ){
 
   fun findByProductId(productId: String) : Inventory? {

@@ -5,8 +5,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class InventoryHistoryRepository(
-  private val inventoryHistoryJpaRepository: InventoryHistoryJpaRepository,
-  private val inventoryHistoryQueryRepository: InventoryHistoryQueryRepository
+  private val inventoryHistoryJpaRepository: InventoryHistoryJpaRepository
 ) {
 
   fun save(inventoryHistory: InventoryHistory) {

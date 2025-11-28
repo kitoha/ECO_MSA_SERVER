@@ -13,5 +13,5 @@ data class ReservationResponse(
   val quantity: Int,
   val status: ReservationStatus,
   val expiresAt: LocalDateTime,
-  val createdAt: LocalDateTime
+  val createdAt: LocalDateTime?
 )
