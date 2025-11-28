@@ -7,6 +7,7 @@ import com.ecommerce.inventory.enums.ReservationStatus
 import com.ecommerce.inventory.repository.Inventory.InventoryRepository
 import com.ecommerce.inventory.repository.InventoryReservation.InventoryReservationRepository
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
@@ -21,6 +22,8 @@ import org.springframework.kafka.core.KafkaTemplate
 import java.time.LocalDateTime
 
 class InventoryReservationServiceTest : BehaviorSpec({
+
+    isolationMode = IsolationMode.InstancePerLeaf
 
     val inventoryRepository = mockk<InventoryRepository>()
     val inventoryReservationRepository = mockk<InventoryReservationRepository>()

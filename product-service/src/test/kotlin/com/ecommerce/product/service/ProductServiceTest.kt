@@ -16,9 +16,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import io.mockk.verify
 import java.math.BigDecimal
 
@@ -360,7 +358,7 @@ class ProductServiceTest : BehaviorSpec({
                 productService.deleteProduct(1L)
 
                 verify(exactly = 1) { productRepository.findByIdAndNotDeleted(1L) }
-                product.deleted shouldBe true
+                product.isDeleted() shouldBe true
             }
         }
 
