@@ -1,5 +1,6 @@
 package com.ecommerce.inventory.service
 
+import com.ecommerce.inventory.event.ReservationCancelledEvent
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.clearMocks
@@ -49,11 +50,11 @@ class InventorySchedulerServiceTest : BehaviorSpec({
                     kafkaTemplate.send(
                         "reservation-cancel",
                         any(),
-                        match<Map<String, Any>> { payload ->
-                            payload["reason"] as? String == "EXPIRED" &&
-                            (payload["reservationId"] as? Long == 1L ||
-                             payload["reservationId"] as? Long == 2L ||
-                             payload["reservationId"] as? Long == 3L)
+                        match<ReservationCancelledEvent> { event ->
+                            event.reason == "EXPIRED" &&
+                            (event.reservationId == 1L ||
+                             event.reservationId == 2L ||
+                             event.reservationId == 3L)
                         }
                     )
                 }
@@ -125,8 +126,8 @@ class InventorySchedulerServiceTest : BehaviorSpec({
                     kafkaTemplate.send(
                         "reservation-cancel",
                         "1",
-                        match<Map<String, Any>> { payload ->
-                            payload["reservationId"] as? Long == 1L
+                        match<ReservationCancelledEvent> { event ->
+                            event.reservationId == 1L
                         }
                     )
                 }
@@ -135,8 +136,8 @@ class InventorySchedulerServiceTest : BehaviorSpec({
                     kafkaTemplate.send(
                         "reservation-cancel",
                         "3",
-                        match<Map<String, Any>> { payload ->
-                            payload["reservationId"] as? Long == 3L
+                        match<ReservationCancelledEvent> { event ->
+                            event.reservationId == 3L
                         }
                     )
                 }
@@ -177,9 +178,9 @@ class InventorySchedulerServiceTest : BehaviorSpec({
                     kafkaTemplate.send(
                         "reservation-cancel",
                         "10",
-                        match<Map<String, Any>> { payload ->
-                            payload["reservationId"] as? Long == 10L &&
-                            payload["reason"] as? String == "EXPIRED"
+                        match<ReservationCancelledEvent> { event ->
+                            event.reservationId == 10L &&
+                            event.reason == "EXPIRED"
                         }
                     )
                 }

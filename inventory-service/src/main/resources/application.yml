@@ -33,7 +33,8 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "*"
+        # 보안: 신뢰할 수 있는 패키지만 명시 (RCE 방지)
+        spring.json.trusted.packages: com.ecommerce.inventory.event
         spring.json.type.mapping: >-
           reservationCreated:com.ecommerce.inventory.event.ReservationCreatedEvent,
           reservationCancelled:com.ecommerce.inventory.event.ReservationCancelledEvent,

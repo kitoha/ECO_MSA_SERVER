@@ -1,5 +1,6 @@
 package com.ecommerce.inventory.service
 
+import com.ecommerce.inventory.event.ReservationCancelledEvent
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
@@ -53,13 +54,15 @@ class InventorySchedulerService(
                 try {
                     val reservationId = reservationIdStr.toLong()
 
+                    val cancelEvent = ReservationCancelledEvent(
+                        reservationId = reservationId,
+                        reason = "EXPIRED"
+                    )
+
                     kafkaTemplate.send(
                         "reservation-cancel",
                         reservationId.toString(),
-                        mapOf(
-                            "reservationId" to reservationId,
-                            "reason" to "EXPIRED"
-                        )
+                        cancelEvent
                     )
 
                     redisTemplate.opsForZSet().remove(RESERVATION_EXPIRY_KEY, reservationIdStr)
