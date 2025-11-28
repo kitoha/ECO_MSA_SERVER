@@ -184,7 +184,7 @@ class ProductTest : BehaviorSpec({
             then("소프트 삭제되어야 한다") {
                 product.delete()
 
-                product.deleted.shouldBeTrue()
+                product.isDeleted().shouldBeTrue()
                 product.deletedAt.shouldNotBeNull()
             }
         }

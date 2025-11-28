@@ -1,4 +1,4 @@
-package com.ecommerce.product.entity.audit
+package com.ecommerce.inventory.entity.audit
 
 import jakarta.persistence.Column
 import jakarta.persistence.EntityListeners

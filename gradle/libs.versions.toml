@@ -1,6 +1,6 @@
 [versions]
 kotlin = "1.9.25"
-springBoot = "3.5.0"
+springBoot = "3.5.8"
 springDependencyManagement = "1.1.7"
 sonarqube = "7.0.0.6105"
 kotlinxCoroutines = "1.8.0"
@@ -8,6 +8,7 @@ querydsl = "5.1.0"
 kotest = "5.9.1"
 mockk = "1.13.12"
 testcontainers = "1.20.4"
+shedlock = "5.16.0"
 
 [libraries]
 # Spring Boot
@@ -27,6 +28,8 @@ kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 
 # Database
 postgresql = { module = "org.postgresql:postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 
 # Jackson
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
@@ -47,6 +50,17 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter" }
+testcontainers-kafka = { module = "org.testcontainers:kafka" }
+
+# Kafka
+spring-kafka = { module = "org.springframework.kafka:spring-kafka" }
+
+# Redis
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
+
+# ShedLock
+shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.ref = "shedlock" }
+shedlock-provider-redis-spring = { module = "net.javacrumbs.shedlock:shedlock-provider-redis-spring", version.ref = "shedlock" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
