@@ -1,5 +1,7 @@
 rootProject.name = "eco-msa"
 
+include("eureka-server")
+include("api-gateway")
 include("product-service")
 include("inventory-service")
 include("cart-service")
