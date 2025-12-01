@@ -29,6 +29,21 @@ class ProductController(
     return ResponseEntity.ok(response)
   }
 
+
+  @GetMapping("/batch")
+  fun getProductsByIds(
+    @RequestParam ids: List<Long>
+  ): ResponseEntity<List<ProductResponse>> {
+    require(ids.isNotEmpty()) { "상품 ID는 최소 1개 이상 필요합니다" }
+    require(ids.size <= 100) {
+      "상품 ID는 최대 100개까지 조회 가능합니다. 요청: ${ids.size}개. " +
+      "더 많은 데이터가 필요한 경우 여러 번 나눠서 요청해주세요."
+    }
+
+    val response = productService.getProductsByIds(ids)
+    return ResponseEntity.ok(response)
+  }
+
   @GetMapping
   fun getAllProducts(): ResponseEntity<List<ProductResponse>> {
     val response = productService.getAllProducts()

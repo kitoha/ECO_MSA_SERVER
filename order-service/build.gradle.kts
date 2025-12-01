@@ -44,6 +44,12 @@ dependencies {
   // Eureka Client
   implementation(libs.spring.cloud.starter.netflix.eureka.client)
 
+  // WebFlux (for WebClient)
+  implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+  // Load Balancer (for @LoadBalanced)
+  implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
+
   testImplementation(libs.spring.boot.starter.test)
   testImplementation(libs.kotlin.test.junit5)
   testRuntimeOnly(libs.junit.platform.launcher)

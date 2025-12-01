@@ -20,6 +20,20 @@ class ProductQueryRepository(
   private val product = QProduct.product
   private val category = QCategory.category
 
+  fun findByIdsWithDetails(ids: List<Long>): List<Product> {
+    if (ids.isEmpty()) return emptyList()
+
+    return queryFactory
+      .selectFrom(product)
+      .leftJoin(product.category, category).fetchJoin()
+      .where(
+        product.id.`in`(ids),
+        notDeleted()
+      )
+      .distinct()
+      .fetch()
+  }
+
   fun searchProducts(
     categoryId: Long?,
     keyword: String?,
