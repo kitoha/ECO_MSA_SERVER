@@ -6,6 +6,8 @@ import com.ecommerce.product.dto.RegisterProductRequest
 import com.ecommerce.product.dto.UpdateProductRequest
 import com.ecommerce.product.entity.Product
 import com.ecommerce.product.entity.ProductImage
+import com.ecommerce.product.generator.IdGenerator
+import com.ecommerce.product.generator.TsidGenerator
 import com.ecommerce.product.repository.CategoryRepository
 import com.ecommerce.product.repository.ProductRepository
 import org.springframework.stereotype.Service
@@ -14,15 +16,11 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class ProductService(
   private val productRepository: ProductRepository,
-  private val categoryRepository: CategoryRepository
+  private val categoryRepository: CategoryRepository,
+  private val idGenerator: TsidGenerator
 ) {
 
   companion object {
-    /**
-     * Batch 조회 최대 개수
-     *
-     * 실무 표준: Amazon, Google, Stripe 등 대부분 100개 제한
-     */
     const val MAX_BATCH_SIZE = 100
   }
 
@@ -32,6 +30,7 @@ class ProductService(
       ?: throw IllegalArgumentException("존재하지 않는 카테고리입니다: ${request.categoryId}")
 
     val product = Product(
+      id = idGenerator.generate(),
       name = request.name,
       description = request.description,
       category = category,
@@ -56,31 +55,25 @@ class ProductService(
   }
 
   @Transactional(readOnly = true)
-  fun getProduct(productId: Long): ProductResponse {
+  fun getProduct(productId: String): ProductResponse {
+    val productId = idGenerator.decode(productId)
     val product = productRepository.findByIdAndNotDeleted(productId)
       ?: throw IllegalArgumentException("존재하지 않는 상품입니다: $productId")
 
     return ProductResponse.from(product)
   }
 
-  /**
-   * 여러 상품을 ID로 한번에 조회 (Batch)
-   *
-   * Order Service 등에서 calculateOrderTotal 시 사용
-   * N+1 문제를 방지하고 한번의 쿼리로 여러 상품 조회
-   *
-   * **제한사항:** 최대 100개까지 조회 가능 (Controller에서 검증됨)
-   */
   @Transactional(readOnly = true)
-  fun getProductsByIds(productIds: List<Long>): List<ProductResponse> {
+  fun getProductsByIds(productIds: List<String>): List<ProductResponse> {
     if (productIds.isEmpty()) return emptyList()
 
-    // 방어적 검증 (Controller에서도 검증하지만 Service 레벨에서도 확인)
     require(productIds.size <= MAX_BATCH_SIZE) {
       "상품 ID는 최대 ${MAX_BATCH_SIZE}개까지 조회 가능합니다"
     }
 
-    return productRepository.findByIdsAndNotDeleted(productIds)
+    val decodedIds = productIds.map { idGenerator.decode(it) }
+
+    return productRepository.findByIdsAndNotDeleted(decodedIds)
       .map { ProductResponse.from(it) }
   }
 

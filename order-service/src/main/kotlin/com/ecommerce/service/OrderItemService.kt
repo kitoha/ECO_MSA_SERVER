@@ -43,10 +43,14 @@ class OrderItemService(
     }
 
     fun calculateOrderTotal(items: List<OrderItemRequest>): BigDecimal {
-        return items.fold(BigDecimal.ZERO) { acc, item ->
-            //TODO Product-service에서 가격 조회
-           // acc + (item.price.multiply(item.quantity))
-            return BigDecimal.ZERO // - 임시 반환
+        val productIds = items.map { it.productId }
+        val productMap = productClient.getProductsByIds(productIds)
+            .associateBy { it.id }
+
+        return items.fold(BigDecimal.ZERO) { total, item ->
+            val product = productMap[item.productId]
+                ?: throw IllegalArgumentException("존재하지 않는 상품입니다: ${item.productId}")
+            total + (product.salePrice * BigDecimal(item.quantity))
         }
     }
 }

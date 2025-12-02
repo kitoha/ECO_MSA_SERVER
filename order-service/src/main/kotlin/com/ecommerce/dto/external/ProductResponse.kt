@@ -4,7 +4,7 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class ProductResponse(
-    val id: Long,
+    val id: String,
     val name: String,
     val description: String?,
     val categoryId: Long,

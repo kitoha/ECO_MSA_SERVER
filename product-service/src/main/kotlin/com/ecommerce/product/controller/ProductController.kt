@@ -24,7 +24,7 @@ class ProductController(
   }
 
   @GetMapping("/{id}")
-  fun getProduct(@PathVariable id: Long): ResponseEntity<ProductResponse> {
+  fun getProduct(@PathVariable id: String): ResponseEntity<ProductResponse> {
     val response = productService.getProduct(id)
     return ResponseEntity.ok(response)
   }
@@ -32,7 +32,7 @@ class ProductController(
 
   @GetMapping("/batch")
   fun getProductsByIds(
-    @RequestParam ids: List<Long>
+    @RequestParam ids: List<String>
   ): ResponseEntity<List<ProductResponse>> {
     require(ids.isNotEmpty()) { "상품 ID는 최소 1개 이상 필요합니다" }
     require(ids.size <= 100) {

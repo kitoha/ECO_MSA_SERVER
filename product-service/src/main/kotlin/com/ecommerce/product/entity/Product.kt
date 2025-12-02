@@ -21,9 +21,10 @@ import java.math.RoundingMode
 @Entity
 @Table(name = "products")
 class Product (
+
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val id: Long? = null,
+  @Column(name = "id")
+  val id: Long,
 
   @Column(nullable = false, length = 200)
   var name: String,

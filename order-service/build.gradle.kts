@@ -34,6 +34,9 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
+  // TSID (Time-Sorted Unique Identifier)
+  implementation("io.hypersistence:hypersistence-tsid:2.1.1")
+
   // Actuator & Prometheus
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("io.micrometer:micrometer-registry-prometheus")

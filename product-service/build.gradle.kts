@@ -41,6 +41,8 @@ dependencies {
 
   implementation(libs.spring.boot.starter.validation)
 
+  implementation("io.hypersistence:hypersistence-tsid:2.1.1")
+
   // Actuator & Prometheus
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("io.micrometer:micrometer-registry-prometheus")
