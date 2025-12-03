@@ -5,6 +5,7 @@ import com.ecommerce.product.entity.Category
 import com.ecommerce.product.entity.Product
 import com.ecommerce.product.enums.CategoryStatus
 import com.ecommerce.product.enums.ProductStatus
+import com.ecommerce.product.generator.TsidGenerator
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -35,6 +36,8 @@ class ProductQueryRepositoryIntegrationTest(
 ) : BehaviorSpec({
     extensions(SpringExtension)
 
+    val idGenerator = TsidGenerator()
+
     given("실제 DB에 테스트 데이터가 저장되어 있을 때") {
         lateinit var category: Category
         lateinit var product1: Product
@@ -53,6 +56,7 @@ class ProductQueryRepositoryIntegrationTest(
             ))
 
             product1 = productJpaRepository.save(Product(
+                id = idGenerator.generate(),
                 name = "노트북",
                 description = "고성능 노트북",
                 category = category,
@@ -62,6 +66,7 @@ class ProductQueryRepositoryIntegrationTest(
             ))
 
             product2 = productJpaRepository.save(Product(
+                id = idGenerator.generate(),
                 name = "노트북 프로",
                 description = "프로급 노트북",
                 category = category,
@@ -71,6 +76,7 @@ class ProductQueryRepositoryIntegrationTest(
             ))
 
             product3 = productJpaRepository.save(Product(
+                id = idGenerator.generate(),
                 name = "마우스",
                 description = "무선 마우스",
                 category = category,
@@ -289,6 +295,7 @@ class ProductQueryRepositoryIntegrationTest(
         `when`("Soft delete된 상품이 있을 때") {
             then("삭제된 상품은 검색 결과에 포함되지 않아야 한다") {
                 val deletedProduct = productJpaRepository.save(Product(
+                    id = idGenerator.generate(),
                     name = "삭제된 상품",
                     description = "이 상품은 삭제됨",
                     category = category,
@@ -336,6 +343,7 @@ class ProductQueryRepositoryIntegrationTest(
 
             // 전자제품 카테고리에 2개 상품
             productJpaRepository.save(Product(
+                id = idGenerator.generate(),
                 name = "노트북",
                 description = "고성능 노트북",
                 category = category1,
@@ -344,6 +352,7 @@ class ProductQueryRepositoryIntegrationTest(
                 status = ProductStatus.ACTIVE
             ))
             productJpaRepository.save(Product(
+                id = idGenerator.generate(),
                 name = "마우스",
                 description = "무선 마우스",
                 category = category1,
@@ -354,6 +363,7 @@ class ProductQueryRepositoryIntegrationTest(
 
             // 의류 카테고리에 1개 상품
             productJpaRepository.save(Product(
+                id = idGenerator.generate(),
                 name = "티셔츠",
                 description = "면 티셔츠",
                 category = category2,
