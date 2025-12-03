@@ -6,12 +6,14 @@ import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-/**
- * 주문 엔티티
- */
 @Entity
 @Table(name = "orders")
 class Order(
+
+  @Id
+  @Column(name = "id")
+  val id: Long,
+
   @Column(name = "order_number", nullable = false, unique = true, length = 50)
   var orderNumber: String,
 
@@ -41,10 +43,6 @@ class Order(
   val version: Int = 0
 
 ) : BaseEntity() {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val id: Long = 0L
-
   @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
   val items: MutableList<OrderItem> = mutableListOf()
 

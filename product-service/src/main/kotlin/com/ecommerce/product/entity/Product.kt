@@ -8,8 +8,6 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -21,9 +19,10 @@ import java.math.RoundingMode
 @Entity
 @Table(name = "products")
 class Product (
+
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val id: Long? = null,
+  @Column(name = "id")
+  val id: Long,
 
   @Column(nullable = false, length = 200)
   var name: String,

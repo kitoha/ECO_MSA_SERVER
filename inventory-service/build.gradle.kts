@@ -57,6 +57,9 @@ dependencies {
   implementation(libs.shedlock.spring)
   implementation(libs.shedlock.provider.redis.spring)
 
+  // Eureka Client
+  implementation(libs.spring.cloud.starter.netflix.eureka.client)
+
   testImplementation(libs.spring.boot.starter.test)
   testImplementation(libs.kotlin.test.junit5)
   testRuntimeOnly(libs.junit.platform.launcher)
@@ -78,6 +81,12 @@ dependencies {
   testImplementation(libs.testcontainers.kafka)
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.springframework.kafka:spring-kafka-test")
+}
+
+dependencyManagement {
+  imports {
+    mavenBom(libs.spring.cloud.dependencies.get().toString())
+  }
 }
 
 kotlin {

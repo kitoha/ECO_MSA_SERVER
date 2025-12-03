@@ -19,23 +19,29 @@ class ProductRepository(
   }
 
   /**
-   * 상품 단건 조회 (연관 엔티티 포함, FETCH JOIN)
-   *
-   * LazyInitializationException 방지를 위해 category와 images를 함께 로딩
+   * 상품 단건 조회
    */
   fun findByIdAndNotDeleted(id: Long): Product? {
     return jpaRepository.findByIdWithDetails(id)
   }
 
   /**
-   * 모든 상품 조회 (연관 엔티티 포함, FETCH JOIN)
+   * 여러 상품을 ID로 한번에 조회 (Batch)
+   *
+   */
+  fun findByIdsAndNotDeleted(ids: List<Long>): List<Product> {
+    return queryRepository.findByIdsWithDetails(ids)
+  }
+
+  /**
+   * 모든 상품 조회
    */
   fun findAllNotDeleted(): List<Product> {
     return jpaRepository.findAllWithDetails()
   }
 
   /**
-   * 카테고리별 상품 조회 (연관 엔티티 포함, FETCH JOIN)
+   * 카테고리별 상품 조회
    */
   fun findByCategoryId(categoryId: Long): List<Product> {
     return jpaRepository.findByCategoryIdWithDetails(categoryId)
@@ -56,7 +62,7 @@ class ProductRepository(
   }
 
   /**
-   * 상품 삭제 (실제로는 사용하지 않음 - Soft Delete 사용)
+   * 상품 삭제
    */
   fun delete(product: Product) {
     jpaRepository.delete(product)

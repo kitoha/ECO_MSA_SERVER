@@ -1,0 +1,27 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-server
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    # Eureka 서버 자신을 등록하지 않음
+    register-with-eureka: false
+    # 레지스트리 정보를 가져오지 않음
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # 로컬 개발환경: self-preservation 비활성화 (운영환경에서는 true로 설정)
+    enable-self-preservation: false
+    # 서비스 제거 타이머 (밀리초)
+    eviction-interval-timer-in-ms: 5000
+
+logging:
+  level:
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO

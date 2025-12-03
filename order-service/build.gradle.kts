@@ -34,12 +34,24 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
+  // TSID (Time-Sorted Unique Identifier)
+  implementation("io.hypersistence:hypersistence-tsid:2.1.1")
+
   // Actuator & Prometheus
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("io.micrometer:micrometer-registry-prometheus")
 
   // Kafka
   implementation(libs.spring.kafka)
+
+  // Eureka Client
+  implementation(libs.spring.cloud.starter.netflix.eureka.client)
+
+  // WebFlux (for WebClient)
+  implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+  // Load Balancer (for @LoadBalanced)
+  implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
 
   testImplementation(libs.spring.boot.starter.test)
   testImplementation(libs.kotlin.test.junit5)
@@ -62,6 +74,12 @@ dependencies {
   testImplementation(libs.testcontainers.kafka)
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.springframework.kafka:spring-kafka-test")
+}
+
+dependencyManagement {
+  imports {
+    mavenBom(libs.spring.cloud.dependencies.get().toString())
+  }
 }
 
 kotlin {

@@ -22,7 +22,9 @@ class ProductRepositoryTest : BehaviorSpec({
 
     given("ProductRepository의 save 메서드") {
         `when`("상품을 저장하면") {
+            val productId = 236372517419679744L
             val product = Product(
+                id = productId,
                 name = "Test Product",
                 description = "Test Description",
                 category = Category(name = "Test Category", slug = "test-category", status = com.ecommerce.product.enums.CategoryStatus.ACTIVE),
@@ -32,7 +34,7 @@ class ProductRepositoryTest : BehaviorSpec({
             )
 
             val savedProduct = Product(
-                id = 1L,
+                id = productId,
                 name = "Test Product",
                 description = "Test Description",
                 category = Category(name = "Test Category", slug = "test-category", status = com.ecommerce.product.enums.CategoryStatus.ACTIVE),

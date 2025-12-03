@@ -38,7 +38,7 @@ class ProductControllerTest : BehaviorSpec({
         )
 
         val expectedResponse = ProductResponse(
-            id = 1L,
+            id = "0C6JNH3N3B8G0",
             name = "노트북",
             description = "고성능 노트북",
             categoryId = 1L,
@@ -76,8 +76,9 @@ class ProductControllerTest : BehaviorSpec({
     }
 
     given("ProductController의 getProduct 엔드포인트가 주어졌을 때") {
+        val productIdString = "0C6JNH3N3B8G0"
         val expectedResponse = ProductResponse(
-            id = 1L,
+            id = "0C6JNH3N3B8G0",
             name = "노트북",
             description = "고성능 노트북",
             categoryId = 1L,
@@ -92,17 +93,17 @@ class ProductControllerTest : BehaviorSpec({
         )
 
         `when`("상품 ID로 조회하면") {
-            every { productService.getProduct(1L) } returns expectedResponse
+            every { productService.getProduct(productIdString) } returns expectedResponse
 
             then("상품 정보를 반환하고 200 OK 응답을 반환해야 한다") {
-                val response = productController.getProduct(1L)
+                val response = productController.getProduct(productIdString)
 
                 response.statusCode shouldBe HttpStatus.OK
                 response.body shouldBe expectedResponse
-                response.body?.id shouldBe 1L
+                response.body?.id shouldBe productIdString
                 response.body?.name shouldBe "노트북"
 
-                verify(exactly = 1) { productService.getProduct(1L) }
+                verify(exactly = 1) { productService.getProduct(productIdString) }
             }
         }
     }
@@ -110,7 +111,7 @@ class ProductControllerTest : BehaviorSpec({
     given("ProductController의 getAllProducts 엔드포인트가 주어졌을 때") {
         val expectedResponses = listOf(
             ProductResponse(
-                id = 1L,
+                id = "0C6JNH3N3B8G0",
                 name = "노트북",
                 description = "고성능 노트북",
                 categoryId = 1L,
@@ -124,7 +125,7 @@ class ProductControllerTest : BehaviorSpec({
                 updatedAt = LocalDateTime.now()
             ),
             ProductResponse(
-                id = 2L,
+                id = "0C6JNH3N3B8G1",
                 name = "마우스",
                 description = "무선 마우스",
                 categoryId = 1L,
@@ -166,7 +167,7 @@ class ProductControllerTest : BehaviorSpec({
 
         val expectedResponses = listOf(
             ProductResponse(
-                id = 1L,
+                id = "0C6JNH3N3B8G0",
                 name = "노트북",
                 description = "고성능 노트북",
                 categoryId = 1L,
@@ -197,6 +198,7 @@ class ProductControllerTest : BehaviorSpec({
     }
 
     given("ProductController의 updateProduct 엔드포인트가 주어졌을 때") {
+        val productIdString = "0C6JNH3N3B8G0"
         val updateRequest = UpdateProductRequest(
             name = "프리미엄 노트북",
             description = "최고급 노트북",
@@ -206,7 +208,7 @@ class ProductControllerTest : BehaviorSpec({
         )
 
         val expectedResponse = ProductResponse(
-            id = 1L,
+            id = "0C6JNH3N3B8G0",
             name = "프리미엄 노트북",
             description = "최고급 노트북",
             categoryId = 1L,
@@ -221,32 +223,34 @@ class ProductControllerTest : BehaviorSpec({
         )
 
         `when`("상품 정보를 업데이트하면") {
-            every { productService.updateProduct(1L, updateRequest) } returns expectedResponse
+            every { productService.updateProduct(productIdString, updateRequest) } returns expectedResponse
 
             then("업데이트된 상품 정보를 반환하고 200 OK 응답을 반환해야 한다") {
-                val response = productController.updateProduct(1L, updateRequest)
+                val response = productController.updateProduct(productIdString, updateRequest)
 
                 response.statusCode shouldBe HttpStatus.OK
                 response.body shouldBe expectedResponse
                 response.body?.name shouldBe "프리미엄 노트북"
                 response.body?.originalPrice shouldBe BigDecimal("1500000")
 
-                verify(exactly = 1) { productService.updateProduct(1L, updateRequest) }
+                verify(exactly = 1) { productService.updateProduct(productIdString, updateRequest) }
             }
         }
     }
 
     given("ProductController의 deleteProduct 엔드포인트가 주어졌을 때") {
+        val productIdString = "0C6JNH3N3B8G0"
+
         `when`("상품을 삭제하면") {
-            every { productService.deleteProduct(1L) } just runs
+            every { productService.deleteProduct(productIdString) } just runs
 
             then("204 NO CONTENT 응답을 반환해야 한다") {
-                val response = productController.deleteProduct(1L)
+                val response = productController.deleteProduct(productIdString)
 
                 response.statusCode shouldBe HttpStatus.NO_CONTENT
                 response.body shouldBe null
 
-                verify(exactly = 1) { productService.deleteProduct(1L) }
+                verify(exactly = 1) { productService.deleteProduct(productIdString) }
             }
         }
     }

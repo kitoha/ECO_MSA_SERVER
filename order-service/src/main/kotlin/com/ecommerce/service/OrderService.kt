@@ -7,6 +7,7 @@ import com.ecommerce.event.OrderCancelledEvent
 import com.ecommerce.event.OrderConfirmedEvent
 import com.ecommerce.event.OrderCreatedEvent
 import com.ecommerce.event.OrderItemData
+import com.ecommerce.generator.TsidGenerator
 import com.ecommerce.repository.OrderRepository
 import com.ecommerce.request.CreateOrderRequest
 import com.ecommerce.response.OrderItemResponse
@@ -28,7 +29,8 @@ class OrderService(
     private val orderRepository: OrderRepository,
     private val orderItemService: OrderItemService,
     private val kafkaTemplate: KafkaTemplate<String, Any>,
-    private val orderNumberGenerator: OrderNumberGenerator
+    private val orderNumberGenerator: OrderNumberGenerator,
+    private val idGenerator: TsidGenerator
 ) {
 
     private val logger = LoggerFactory.getLogger(OrderService::class.java)
@@ -40,6 +42,7 @@ class OrderService(
         val totalAmount = orderItemService.calculateOrderTotal(request.items)
 
         val order = Order(
+            id = idGenerator.generate(),
             orderNumber = orderNumberGenerator.generate(),
             userId = request.userId,
             totalAmount = totalAmount,

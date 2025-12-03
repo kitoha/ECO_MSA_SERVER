@@ -15,6 +15,7 @@ class OrderTest : BehaviorSpec({
 
     beforeEach {
         order = Order(
+            id = 236372517419679744L,
             orderNumber = "ORD-20250128-000001",
             userId = "user123",
             status = OrderStatus.PENDING,

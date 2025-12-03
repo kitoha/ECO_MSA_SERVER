@@ -41,9 +41,14 @@ dependencies {
 
   implementation(libs.spring.boot.starter.validation)
 
+  implementation("io.hypersistence:hypersistence-tsid:2.1.1")
+
   // Actuator & Prometheus
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("io.micrometer:micrometer-registry-prometheus")
+
+  // Eureka Client
+  implementation(libs.spring.cloud.starter.netflix.eureka.client)
 
   testImplementation(libs.spring.boot.starter.test)
   testImplementation(libs.kotlin.test.junit5)
@@ -64,6 +69,12 @@ dependencies {
   testImplementation(libs.testcontainers.postgresql)
   testImplementation(libs.testcontainers.junit.jupiter)
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
+}
+
+dependencyManagement {
+  imports {
+    mavenBom(libs.spring.cloud.dependencies.get().toString())
+  }
 }
 
 kotlin {

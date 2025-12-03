@@ -1,5 +1,6 @@
 package com.ecommerce.service
 
+import com.ecommerce.client.ProductClient
 import com.ecommerce.dto.OrderItemDto
 import com.ecommerce.entity.OrderItem
 import com.ecommerce.repository.OrderItemRepository
@@ -14,20 +15,22 @@ import java.math.BigDecimal
 @Service
 class OrderItemService(
     private val orderItemRepository: OrderItemRepository,
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val productClient: ProductClient
 ) {
 
     fun addOrderItem(orderId: Long, item: OrderItemRequest) {
         val order = orderRepository.findById(orderId)
             ?: throw IllegalArgumentException("존재하지 않는 주문입니다: $orderId")
 
-        //val productInfo = productClient.getProductInfo(item.productId) - api gateway 통해서 호출
+        val productInfo = productClient.getProductById(item.productId)
+            ?: throw IllegalArgumentException("존재하지 않는 상품입니다: ${item.productId}")
 
         val orderItem = OrderItem(
-            productId = item.productId.toString(),
-            productName = "상품명 (조회 필요)", // TODO: Product-service에서 조회
-            price = BigDecimal(1),// TODO: Product-service에서 조회 (ProductInfo.price)
-            quantity = item.quantity.toInt()
+            productId = item.productId,
+            productName = productInfo.name,
+            price = productInfo.salePrice,
+            quantity = item.quantity
         )
 
         order.addItem(orderItem)
@@ -40,10 +43,14 @@ class OrderItemService(
     }
 
     fun calculateOrderTotal(items: List<OrderItemRequest>): BigDecimal {
-        return items.fold(BigDecimal.ZERO) { acc, item ->
-            //TODO Product-service에서 가격 조회
-           // acc + (item.price.multiply(item.quantity))
-            return BigDecimal.ZERO // - 임시 반환
+        val productIds = items.map { it.productId }
+        val productMap = productClient.getProductsByIds(productIds)
+            .associateBy { it.id }
+
+        return items.fold(BigDecimal.ZERO) { total, item ->
+            val product = productMap[item.productId]
+                ?: throw IllegalArgumentException("존재하지 않는 상품입니다: ${item.productId}")
+            total + (product.salePrice * BigDecimal(item.quantity))
         }
     }
 }

@@ -3,6 +3,7 @@ package com.ecommerce.service
 import com.ecommerce.dto.OrderItemDto
 import com.ecommerce.entity.Order
 import com.ecommerce.enums.OrderStatus
+import com.ecommerce.generator.TsidGenerator
 import com.ecommerce.repository.OrderRepository
 import com.ecommerce.request.CreateOrderRequest
 import com.ecommerce.request.OrderItemRequest
@@ -24,11 +25,12 @@ class OrderServiceTest : BehaviorSpec({
     val orderItemService = mockk<OrderItemService>()
     val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
     val orderNumberGenerator = mockk<OrderNumberGenerator>()
+    val idGenerator = mockk<TsidGenerator>()
 
-    val orderService = OrderService(orderRepository, orderItemService, kafkaTemplate, orderNumberGenerator)
+    val orderService = OrderService(orderRepository, orderItemService, kafkaTemplate, orderNumberGenerator, idGenerator)
 
     beforeEach {
-        clearMocks(orderRepository, orderItemService, kafkaTemplate, answers = false)
+        clearMocks(orderRepository, orderItemService, kafkaTemplate, idGenerator, answers = false)
     }
 
     given("OrderService의 createOrder 메서드가 주어졌을 때") {
@@ -45,7 +47,9 @@ class OrderServiceTest : BehaviorSpec({
             shippingPhone = "010-1234-5678"
         )
 
+        val orderId = 236372517419679744L
         val savedOrder = Order(
+            id = orderId,
             orderNumber = "ORD-20250128-000001",
             userId = "user123",
             status = OrderStatus.PENDING,
@@ -57,6 +61,7 @@ class OrderServiceTest : BehaviorSpec({
         )
 
         `when`("유효한 요청으로 주문을 생성하면") {
+            every { idGenerator.generate() } returns orderId
             every { orderItemService.calculateOrderTotal(any()) } returns BigDecimal("100000")
             every { orderRepository.save(any()) } returns savedOrder
             every { orderItemService.addOrderItem(any(), any()) } just runs
@@ -103,6 +108,7 @@ class OrderServiceTest : BehaviorSpec({
                 shippingPhone = "010-1234-5678"
             )
 
+            every { idGenerator.generate() } returns orderId
             every { orderItemService.calculateOrderTotal(any()) } returns BigDecimal("150000")
             every { orderRepository.save(any()) } returns savedOrder
             every { orderItemService.addOrderItem(any(), any()) } just runs
@@ -120,7 +126,9 @@ class OrderServiceTest : BehaviorSpec({
     }
 
     given("OrderService의 getOrder 메서드가 주어졌을 때") {
+        val orderId = 236372517419679744L
         val order = Order(
+            id = orderId,
             orderNumber = "ORD-20250128-000001",
             userId = "user123",
             status = OrderStatus.PENDING,
@@ -132,35 +140,39 @@ class OrderServiceTest : BehaviorSpec({
         )
 
         `when`("존재하는 주문 ID로 조회하면") {
-            every { orderRepository.findById(1L) } returns order
-            every { orderItemService.getOrderItems(1L) } returns emptyList()
+            every { orderRepository.findById(orderId) } returns order
+            every { orderItemService.getOrderItems(orderId) } returns emptyList()
 
             then("주문 정보가 반환되어야 한다") {
-                val response = orderService.getOrder(1L)
+                val response = orderService.getOrder(orderId)
 
                 response.userId shouldBe "user123"
                 response.status shouldBe OrderStatus.PENDING
 
-                verify(exactly = 1) { orderRepository.findById(1L) }
-                verify(exactly = 1) { orderItemService.getOrderItems(1L) }
+                verify(exactly = 1) { orderRepository.findById(orderId) }
+                verify(exactly = 1) { orderItemService.getOrderItems(orderId) }
             }
         }
 
         `when`("존재하지 않는 주문 ID로 조회하면") {
-            every { orderRepository.findById(999L) } returns null
+            val invalidId = 999L
+            every { orderRepository.findById(invalidId) } returns null
 
             then("예외가 발생해야 한다") {
                 val exception = shouldThrow<IllegalArgumentException> {
-                    orderService.getOrder(999L)
+                    orderService.getOrder(invalidId)
                 }
-                exception.message shouldBe "존재하지 않는 주문입니다: 999"
+                exception.message shouldBe "존재하지 않는 주문입니다: $invalidId"
             }
         }
     }
 
     given("OrderService의 getOrdersByUser 메서드가 주어졌을 때") {
+        val orderId1 = 236372517419679744L
+        val orderId2 = 236372517419679745L
         val orders = listOf(
             Order(
+                id = orderId1,
                 orderNumber = "ORD-20250128-000001",
                 userId = "user123",
                 status = OrderStatus.PENDING,
@@ -171,6 +183,7 @@ class OrderServiceTest : BehaviorSpec({
                 orderedAt = LocalDateTime.now()
             ),
             Order(
+                id = orderId2,
                 orderNumber = "ORD-20250128-000002",
                 userId = "user123",
                 status = OrderStatus.CONFIRMED,
@@ -209,7 +222,9 @@ class OrderServiceTest : BehaviorSpec({
     }
 
     given("OrderService의 cancelOrder 메서드가 주어졌을 때") {
+        val orderId = 236372517419679744L
         val order = Order(
+            id = orderId,
             orderNumber = "ORD-20250128-000001",
             userId = "user123",
             status = OrderStatus.PENDING,
@@ -221,28 +236,28 @@ class OrderServiceTest : BehaviorSpec({
         )
 
         `when`("주문을 취소하면") {
-            every { orderRepository.findById(1L) } returns order
+            every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
             every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
 
             then("주문 상태가 CANCELLED로 변경되어야 한다") {
-                orderService.cancelOrder(1L)
+                orderService.cancelOrder(orderId)
 
                 order.status shouldBe OrderStatus.CANCELLED
 
-                verify(exactly = 1) { orderRepository.findById(1L) }
+                verify(exactly = 1) { orderRepository.findById(orderId) }
                 verify(exactly = 1) { orderRepository.save(any()) }
                 verify(exactly = 1) { kafkaTemplate.send("order-cancelled", any(), any()) }
             }
         }
 
         `when`("취소 사유와 함께 주문을 취소하면") {
-            every { orderRepository.findById(1L) } returns order
+            every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
             every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
 
             then("취소 이벤트에 사유가 포함되어야 한다") {
-                orderService.cancelOrder(1L, "재고 부족")
+                orderService.cancelOrder(orderId, "재고 부족")
 
                 verify(exactly = 1) {
                     kafkaTemplate.send(
@@ -258,7 +273,9 @@ class OrderServiceTest : BehaviorSpec({
     }
 
     given("OrderService의 confirmOrder 메서드가 주어졌을 때") {
+        val orderId = 236372517419679744L
         val order = Order(
+            id = orderId,
             orderNumber = "ORD-20250128-000001",
             userId = "user123",
             status = OrderStatus.PENDING,
@@ -270,16 +287,16 @@ class OrderServiceTest : BehaviorSpec({
         )
 
         `when`("주문을 확정하면") {
-            every { orderRepository.findById(1L) } returns order
+            every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
             every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
 
             then("주문 상태가 CONFIRMED로 변경되어야 한다") {
-                orderService.confirmOrder(1L)
+                orderService.confirmOrder(orderId)
 
                 order.status shouldBe OrderStatus.CONFIRMED
 
-                verify(exactly = 1) { orderRepository.findById(1L) }
+                verify(exactly = 1) { orderRepository.findById(orderId) }
                 verify(exactly = 1) { orderRepository.save(any()) }
                 verify(exactly = 1) { kafkaTemplate.send("order-confirmed", any(), any()) }
             }
@@ -287,7 +304,9 @@ class OrderServiceTest : BehaviorSpec({
     }
 
     given("OrderService의 updateOrderStatus 메서드가 주어졌을 때") {
+        val orderId = 236372517419679744L
         val order = Order(
+            id = orderId,
             orderNumber = "ORD-20250128-000001",
             userId = "user123",
             status = OrderStatus.PENDING,
@@ -299,25 +318,25 @@ class OrderServiceTest : BehaviorSpec({
         )
 
         `when`("유효한 상태로 변경하면") {
-            every { orderRepository.findById(1L) } returns order
+            every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
 
             then("주문 상태가 변경되어야 한다") {
-                orderService.updateOrderStatus(1L, OrderStatus.CONFIRMED)
+                orderService.updateOrderStatus(orderId, OrderStatus.CONFIRMED)
 
                 order.status shouldBe OrderStatus.CONFIRMED
 
-                verify(exactly = 1) { orderRepository.findById(1L) }
+                verify(exactly = 1) { orderRepository.findById(orderId) }
                 verify(exactly = 1) { orderRepository.save(any()) }
             }
         }
 
         `when`("유효하지 않은 상태로 변경하면") {
-            every { orderRepository.findById(1L) } returns order
+            every { orderRepository.findById(orderId) } returns order
 
             then("예외가 발생해야 한다") {
                 val exception = shouldThrow<IllegalArgumentException> {
-                    orderService.updateOrderStatus(1L, OrderStatus.SHIPPED)
+                    orderService.updateOrderStatus(orderId, OrderStatus.SHIPPED)
                 }
                 exception.message shouldBe "주문 상태를 PENDING 에서 SHIPPED 로 변경할 수 없습니다"
             }
