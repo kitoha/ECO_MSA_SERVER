@@ -224,4 +224,95 @@ class ProductClientTest : BehaviorSpec({
             }
         }
     }
+
+    given("ProductClient의 searchProducts 메서드가 주어졌을 때") {
+        val keyword = "노트북"
+        val mockProducts = listOf(
+            ProductResponse(
+                id = "0C6JNH3N3B8G0",
+                name = "노트북",
+                description = "고성능 노트북",
+                categoryId = 1L,
+                categoryName = "전자제품",
+                originalPrice = BigDecimal("1000000"),
+                salePrice = BigDecimal("800000"),
+                discountRate = BigDecimal("20.00"),
+                status = "ACTIVE",
+                images = emptyList(),
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now()
+            ),
+            ProductResponse(
+                id = "0C6JNH3N3B8G1",
+                name = "노트북 프로",
+                description = "프로급 노트북",
+                categoryId = 1L,
+                categoryName = "전자제품",
+                originalPrice = BigDecimal("2000000"),
+                salePrice = BigDecimal("1800000"),
+                discountRate = BigDecimal("10.00"),
+                status = "ACTIVE",
+                images = emptyList(),
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now()
+            )
+        )
+
+        `when`("키워드로 상품을 검색하면") {
+            every { webClient.get() } returns requestHeadersUriSpec
+            every { requestHeadersUriSpec.uri(any<Function<UriBuilder, URI>>()) } returns requestHeadersSpec
+            every { requestHeadersSpec.retrieve() } returns responseSpec
+            every { responseSpec.bodyToFlux(ProductResponse::class.java) } returns Flux.fromIterable(mockProducts)
+
+            then("검색 결과를 반환해야 한다") {
+                val result = productClient.searchProducts(keyword)
+
+                result shouldHaveSize 2
+                result[0].name shouldBe "노트북"
+                result[1].name shouldBe "노트북 프로"
+            }
+        }
+
+        `when`("페이지와 사이즈를 지정하여 검색하면") {
+            every { webClient.get() } returns requestHeadersUriSpec
+            every { requestHeadersUriSpec.uri(any<Function<UriBuilder, URI>>()) } returns requestHeadersSpec
+            every { requestHeadersSpec.retrieve() } returns responseSpec
+            every { responseSpec.bodyToFlux(ProductResponse::class.java) } returns Flux.fromIterable(mockProducts)
+
+            then("검색 결과를 반환해야 한다") {
+                val result = productClient.searchProducts(keyword, page = 1, size = 10)
+
+                result shouldHaveSize 2
+                result[0].name shouldBe "노트북"
+            }
+        }
+
+        `when`("검색 중 예외가 발생하면") {
+            every { webClient.get() } returns requestHeadersUriSpec
+            every { requestHeadersUriSpec.uri(any<Function<UriBuilder, URI>>()) } returns requestHeadersSpec
+            every { requestHeadersSpec.retrieve() } returns responseSpec
+            every { responseSpec.bodyToFlux(ProductResponse::class.java) } returns Flux.error(
+                RuntimeException("Connection error")
+            )
+
+            then("ProductClientException이 발생해야 한다") {
+                shouldThrow<ProductClientException> {
+                    productClient.searchProducts(keyword)
+                }
+            }
+        }
+
+        `when`("검색 결과가 없으면") {
+            every { webClient.get() } returns requestHeadersUriSpec
+            every { requestHeadersUriSpec.uri(any<Function<UriBuilder, URI>>()) } returns requestHeadersSpec
+            every { requestHeadersSpec.retrieve() } returns responseSpec
+            every { responseSpec.bodyToFlux(ProductResponse::class.java) } returns Flux.empty()
+
+            then("빈 리스트를 반환해야 한다") {
+                val result = productClient.searchProducts("존재하지않는상품")
+
+                result shouldHaveSize 0
+            }
+        }
+    }
 })
