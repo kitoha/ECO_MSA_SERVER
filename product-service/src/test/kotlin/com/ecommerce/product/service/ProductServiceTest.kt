@@ -24,10 +24,11 @@ class ProductServiceTest : BehaviorSpec({
 
     val productRepository = mockk<ProductRepository>()
     val categoryRepository = mockk<CategoryRepository>()
-    val productService = ProductService(productRepository, categoryRepository)
+    val idGenerator = mockk<com.ecommerce.product.generator.TsidGenerator>()
+    val productService = ProductService(productRepository, categoryRepository, idGenerator)
 
     beforeEach {
-        clearMocks(productRepository, categoryRepository, answers = false)
+        clearMocks(productRepository, categoryRepository ,idGenerator, answers = false)
     }
 
     given("ProductService의 registerProduct 메서드가 주어졌을 때") {
@@ -55,8 +56,10 @@ class ProductServiceTest : BehaviorSpec({
         )
 
         `when`("유효한 요청으로 상품을 등록하면") {
+            val productId = 236372517419679744L
+            val productIdString = "0C6JNH3N3B8G0"
             val savedProduct = Product(
-                id = 1L,
+                id = productId,
                 name = request.name,
                 description = request.description,
                 category = category,
@@ -65,6 +68,8 @@ class ProductServiceTest : BehaviorSpec({
                 status = request.status
             )
 
+            every { idGenerator.generate() } returns productId
+            every { idGenerator.encode(productId) } returns productIdString
             every { categoryRepository.findByIdAndNotDeleted(1L) } returns category
             every { productRepository.save(any()) } returns savedProduct
 
@@ -76,6 +81,7 @@ class ProductServiceTest : BehaviorSpec({
                 response.salePrice shouldBe BigDecimal("800000")
                 response.status shouldBe ProductStatus.ACTIVE
 
+                verify(exactly = 1) { idGenerator.generate() }
                 verify(exactly = 1) { categoryRepository.findByIdAndNotDeleted(1L) }
                 verify(exactly = 1) { productRepository.save(any()) }
             }
@@ -96,6 +102,8 @@ class ProductServiceTest : BehaviorSpec({
     }
 
     given("ProductService의 getProduct 메서드가 주어졌을 때") {
+        val productId = 236372517419679744L
+        val productIdString = "0C6JNH3N3B8G0"
         val category = Category(
             id = 1L,
             name = "전자제품",
@@ -104,7 +112,7 @@ class ProductServiceTest : BehaviorSpec({
         )
 
         val product = Product(
-            id = 1L,
+            id = productId,
             name = "노트북",
             description = "고성능 노트북",
             category = category,
@@ -114,32 +122,42 @@ class ProductServiceTest : BehaviorSpec({
         )
 
         `when`("존재하는 상품 ID로 조회하면") {
-            every { productRepository.findByIdAndNotDeleted(1L) } returns product
+            every { idGenerator.decode(productIdString) } returns productId
+            every { idGenerator.encode(productId) } returns productIdString
+            every { productRepository.findByIdAndNotDeleted(productId) } returns product
 
             then("상품 정보가 반환되어야 한다") {
-                val response = productService.getProduct(1L)
+                val response = productService.getProduct(productIdString)
 
-                response.id shouldBe 1L
                 response.name shouldBe "노트북"
                 response.categoryId shouldBe 1L
 
-                verify(exactly = 1) { productRepository.findByIdAndNotDeleted(1L) }
+                verify(exactly = 1) { idGenerator.decode(productIdString) }
+                verify(exactly = 1) { idGenerator.encode(productId) }
+                verify(exactly = 1) { productRepository.findByIdAndNotDeleted(productId) }
             }
         }
 
         `when`("존재하지 않는 상품 ID로 조회하면") {
-            every { productRepository.findByIdAndNotDeleted(999L) } returns null
+            val invalidIdString = "INVALID"
+            val invalidId = 999L
+            every { idGenerator.decode(invalidIdString) } returns invalidId
+            every { productRepository.findByIdAndNotDeleted(invalidId) } returns null
 
             then("예외가 발생해야 한다") {
                 val exception = shouldThrow<IllegalArgumentException> {
-                    productService.getProduct(999L)
+                    productService.getProduct(invalidIdString)
                 }
-                exception.message shouldBe "존재하지 않는 상품입니다: 999"
+                exception.message shouldBe "존재하지 않는 상품입니다: $invalidId"
             }
         }
     }
 
     given("ProductService의 getAllProducts 메서드가 주어졌을 때") {
+        val productId1 = 236372517419679744L
+        val productId2 = 236372517419679745L
+        val productIdString1 = "0C6JNH3N3B8G0"
+        val productIdString2 = "0C6JNH3N3B8G1"
         val category = Category(
             id = 1L,
             name = "전자제품",
@@ -149,7 +167,7 @@ class ProductServiceTest : BehaviorSpec({
 
         val products = listOf(
             Product(
-                id = 1L,
+                id = productId1,
                 name = "노트북",
                 description = "고성능 노트북",
                 category = category,
@@ -158,7 +176,7 @@ class ProductServiceTest : BehaviorSpec({
                 status = ProductStatus.ACTIVE
             ),
             Product(
-                id = 2L,
+                id = productId2,
                 name = "마우스",
                 description = "무선 마우스",
                 category = category,
@@ -169,6 +187,8 @@ class ProductServiceTest : BehaviorSpec({
         )
 
         `when`("모든 상품을 조회하면") {
+            every { idGenerator.encode(productId1) } returns productIdString1
+            every { idGenerator.encode(productId2) } returns productIdString2
             every { productRepository.findAllNotDeleted() } returns products
 
             then("모든 상품 목록이 반환되어야 한다") {
@@ -184,6 +204,8 @@ class ProductServiceTest : BehaviorSpec({
     }
 
     given("ProductService의 searchProducts 메서드가 주어졌을 때") {
+        val productId = 236372517419679744L
+        val productIdString = "0C6JNH3N3B8G0"
         val category = Category(
             id = 1L,
             name = "전자제품",
@@ -201,7 +223,7 @@ class ProductServiceTest : BehaviorSpec({
 
         val searchResults = listOf(
             Product(
-                id = 1L,
+                id = productId,
                 name = "노트북",
                 description = "고성능 노트북",
                 category = category,
@@ -212,6 +234,7 @@ class ProductServiceTest : BehaviorSpec({
         )
 
         `when`("검색 조건으로 상품을 검색하면") {
+            every { idGenerator.encode(productId) } returns productIdString
             every {
                 productRepository.searchProducts(
                     categoryId = 1L,
@@ -242,6 +265,8 @@ class ProductServiceTest : BehaviorSpec({
     }
 
     given("ProductService의 updateProduct 메서드가 주어졌을 때") {
+        val productId = 236372517419679744L
+        val productIdString = "0C6JNH3N3B8G0"
         val category = Category(
             id = 1L,
             name = "전자제품",
@@ -250,7 +275,7 @@ class ProductServiceTest : BehaviorSpec({
         )
 
         val product = Product(
-            id = 1L,
+            id = productId,
             name = "노트북",
             description = "고성능 노트북",
             category = category,
@@ -268,17 +293,21 @@ class ProductServiceTest : BehaviorSpec({
                 status = ProductStatus.ACTIVE
             )
 
-            every { productRepository.findByIdAndNotDeleted(1L) } returns product
+            every { idGenerator.decode(productIdString) } returns productId
+            every { idGenerator.encode(productId) } returns productIdString
+            every { productRepository.findByIdAndNotDeleted(productId) } returns product
 
             then("상품 정보가 업데이트되어야 한다") {
-                val response = productService.updateProduct(1L, updateRequest)
+                val response = productService.updateProduct(productIdString, updateRequest)
 
                 response.name shouldBe "프리미엄 노트북"
                 response.description shouldBe "최고급 노트북"
                 response.originalPrice shouldBe BigDecimal("1500000")
                 response.salePrice shouldBe BigDecimal("1200000")
 
-                verify(exactly = 1) { productRepository.findByIdAndNotDeleted(1L) }
+                verify(exactly = 1) { idGenerator.decode(productIdString) }
+                verify(exactly = 1) { idGenerator.encode(productId) }
+                verify(exactly = 1) { productRepository.findByIdAndNotDeleted(productId) }
             }
         }
 
@@ -292,41 +321,49 @@ class ProductServiceTest : BehaviorSpec({
 
             val updateRequest = UpdateProductRequest(categoryId = 2L)
 
-            every { productRepository.findByIdAndNotDeleted(1L) } returns product
+            every { idGenerator.decode(productIdString) } returns productId
+            every { idGenerator.encode(productId) } returns productIdString
+            every { productRepository.findByIdAndNotDeleted(productId) } returns product
             every { categoryRepository.findByIdAndNotDeleted(2L) } returns newCategory
 
             then("카테고리가 변경되어야 한다") {
-                val response = productService.updateProduct(1L, updateRequest)
+                val response = productService.updateProduct(productIdString, updateRequest)
 
                 response.categoryId shouldBe 2L
                 response.categoryName shouldBe "컴퓨터"
 
+                verify(exactly = 1) { idGenerator.decode(productIdString) }
+                verify(exactly = 1) { idGenerator.encode(productId) }
                 verify(exactly = 1) { categoryRepository.findByIdAndNotDeleted(2L) }
             }
         }
 
         `when`("존재하지 않는 상품을 업데이트하면") {
-            every { productRepository.findByIdAndNotDeleted(999L) } returns null
+            val invalidIdString = "INVALID"
+            val invalidId = 999L
+            every { idGenerator.decode(invalidIdString) } returns invalidId
+            every { productRepository.findByIdAndNotDeleted(invalidId) } returns null
 
             then("예외가 발생해야 한다") {
                 val updateRequest = UpdateProductRequest(name = "새 이름")
 
                 val exception = shouldThrow<IllegalArgumentException> {
-                    productService.updateProduct(999L, updateRequest)
+                    productService.updateProduct(invalidIdString, updateRequest)
                 }
-                exception.message shouldBe "존재하지 않는 상품입니다: 999"
+                exception.message shouldBe "존재하지 않는 상품입니다: $invalidId"
             }
         }
 
         `when`("존재하지 않는 카테고리로 변경하면") {
-            every { productRepository.findByIdAndNotDeleted(1L) } returns product
+            every { idGenerator.decode(productIdString) } returns productId
+            every { productRepository.findByIdAndNotDeleted(productId) } returns product
             every { categoryRepository.findByIdAndNotDeleted(999L) } returns null
 
             then("예외가 발생해야 한다") {
                 val updateRequest = UpdateProductRequest(categoryId = 999L)
 
                 val exception = shouldThrow<IllegalArgumentException> {
-                    productService.updateProduct(1L, updateRequest)
+                    productService.updateProduct(productIdString, updateRequest)
                 }
                 exception.message shouldBe "존재하지 않는 카테고리입니다: 999"
             }
@@ -334,6 +371,8 @@ class ProductServiceTest : BehaviorSpec({
     }
 
     given("ProductService의 deleteProduct 메서드가 주어졌을 때") {
+        val productId = 236372517419679744L
+        val productIdString = "0C6JNH3N3B8G0"
         val category = Category(
             id = 1L,
             name = "전자제품",
@@ -342,7 +381,7 @@ class ProductServiceTest : BehaviorSpec({
         )
 
         val product = Product(
-            id = 1L,
+            id = productId,
             name = "노트북",
             description = "고성능 노트북",
             category = category,
@@ -352,24 +391,29 @@ class ProductServiceTest : BehaviorSpec({
         )
 
         `when`("존재하는 상품을 삭제하면") {
-            every { productRepository.findByIdAndNotDeleted(1L) } returns product
+            every { idGenerator.decode(productIdString) } returns productId
+            every { productRepository.findByIdAndNotDeleted(productId) } returns product
 
             then("상품이 소프트 삭제되어야 한다") {
-                productService.deleteProduct(1L)
+                productService.deleteProduct(productIdString)
 
-                verify(exactly = 1) { productRepository.findByIdAndNotDeleted(1L) }
+                verify(exactly = 1) { idGenerator.decode(productIdString) }
+                verify(exactly = 1) { productRepository.findByIdAndNotDeleted(productId) }
                 product.isDeleted() shouldBe true
             }
         }
 
         `when`("존재하지 않는 상품을 삭제하면") {
-            every { productRepository.findByIdAndNotDeleted(999L) } returns null
+            val invalidIdString = "INVALID"
+            val invalidId = 999L
+            every { idGenerator.decode(invalidIdString) } returns invalidId
+            every { productRepository.findByIdAndNotDeleted(invalidId) } returns null
 
             then("예외가 발생해야 한다") {
                 val exception = shouldThrow<IllegalArgumentException> {
-                    productService.deleteProduct(999L)
+                    productService.deleteProduct(invalidIdString)
                 }
-                exception.message shouldBe "존재하지 않는 상품입니다: 999"
+                exception.message shouldBe "존재하지 않는 상품입니다: $invalidId"
             }
         }
     }

@@ -25,6 +25,17 @@ dependencies {
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.kotlin.test.junit5)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.kotlin.test)
+
+    // Kotest
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotest.property)
+    testImplementation(libs.kotest.extensions.spring)
+
+    // Mockk
+    testImplementation(libs.mockk)
 }
 
 dependencyManagement {

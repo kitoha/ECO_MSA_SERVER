@@ -51,7 +51,7 @@ class ProductService(
 
     val savedProduct = productRepository.save(product)
 
-    return ProductResponse.from(savedProduct)
+    return ProductResponse.from(savedProduct, idGenerator)
   }
 
   @Transactional(readOnly = true)
@@ -60,7 +60,7 @@ class ProductService(
     val product = productRepository.findByIdAndNotDeleted(productId)
       ?: throw IllegalArgumentException("존재하지 않는 상품입니다: $productId")
 
-    return ProductResponse.from(product)
+    return ProductResponse.from(product, idGenerator)
   }
 
   @Transactional(readOnly = true)
@@ -74,13 +74,13 @@ class ProductService(
     val decodedIds = productIds.map { idGenerator.decode(it) }
 
     return productRepository.findByIdsAndNotDeleted(decodedIds)
-      .map { ProductResponse.from(it) }
+      .map { ProductResponse.from(it, idGenerator) }
   }
 
   @Transactional(readOnly = true)
   fun getAllProducts(): List<ProductResponse> {
     return productRepository.findAllNotDeleted()
-      .map { ProductResponse.from(it) }
+      .map { ProductResponse.from(it, idGenerator) }
   }
 
   @Transactional(readOnly = true)
@@ -91,13 +91,14 @@ class ProductService(
       minPrice = request.minPrice,
       maxPrice = request.maxPrice,
       status = request.status
-    ).map { ProductResponse.from(it) }
+    ).map { ProductResponse.from(it, idGenerator) }
   }
 
   @Transactional
-  fun updateProduct(productId: Long, request: UpdateProductRequest): ProductResponse {
-    val product = productRepository.findByIdAndNotDeleted(productId)
-      ?: throw IllegalArgumentException("존재하지 않는 상품입니다: $productId")
+  fun updateProduct(productId: String, request: UpdateProductRequest): ProductResponse {
+    val decodedId = idGenerator.decode(productId)
+    val product = productRepository.findByIdAndNotDeleted(decodedId)
+      ?: throw IllegalArgumentException("존재하지 않는 상품입니다: $decodedId")
 
     if (request.categoryId != null && request.categoryId != product.category.id) {
       val newCategory = categoryRepository.findByIdAndNotDeleted(request.categoryId)
@@ -116,13 +117,14 @@ class ProductService(
 
     request.status?.let { product.changeStatus(it) }
 
-    return ProductResponse.from(product)
+    return ProductResponse.from(product, idGenerator)
   }
 
   @Transactional
-  fun deleteProduct(productId: Long) {
-    val product = productRepository.findByIdAndNotDeleted(productId)
-      ?: throw IllegalArgumentException("존재하지 않는 상품입니다: $productId")
+  fun deleteProduct(productId: String) {
+    val decodedId = idGenerator.decode(productId)
+    val product = productRepository.findByIdAndNotDeleted(decodedId)
+      ?: throw IllegalArgumentException("존재하지 않는 상품입니다: $decodedId")
 
     product.delete()
   }

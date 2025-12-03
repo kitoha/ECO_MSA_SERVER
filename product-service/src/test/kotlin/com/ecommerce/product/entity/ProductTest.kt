@@ -83,6 +83,7 @@ class ProductTest : BehaviorSpec({
 
             then("원가가 0일 때 할인율은 0이어야 한다") {
                 val zeroProduct = Product(
+                    id = 236372517419679745L,
                     name = "무료 상품",
                     description = "무료",
                     category = category,
@@ -96,6 +97,7 @@ class ProductTest : BehaviorSpec({
 
             then("판매가와 원가가 같으면 할인율은 0이어야 한다") {
                 val noDiscountProduct = Product(
+                    id = 236372517419679746L,
                     name = "할인 없음",
                     description = "할인 없음",
                     category = category,
@@ -109,6 +111,7 @@ class ProductTest : BehaviorSpec({
 
             then("소수점 둘째 자리까지 반올림되어야 한다") {
                 val discountProduct = Product(
+                    id = 236372517419679747L,
                     name = "할인 상품",
                     description = "할인 상품",
                     category = category,
@@ -128,6 +131,7 @@ class ProductTest : BehaviorSpec({
 
             then("판매가와 원가가 같으면 false를 반환해야 한다") {
                 val noSaleProduct = Product(
+                    id = 236372517419679748L,
                     name = "세일 없음",
                     description = "세일 없음",
                     category = category,

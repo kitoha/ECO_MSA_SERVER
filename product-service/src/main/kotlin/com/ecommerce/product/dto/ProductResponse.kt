@@ -2,11 +2,12 @@ package com.ecommerce.product.dto
 
 import com.ecommerce.product.entity.Product
 import com.ecommerce.product.enums.ProductStatus
+import com.ecommerce.product.generator.TsidGenerator
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class ProductResponse(
-  val id: Long,
+  val id: String,
   val name: String,
   val description: String?,
   val categoryId: Long,
@@ -20,9 +21,9 @@ data class ProductResponse(
   val updatedAt: LocalDateTime?
 ) {
   companion object {
-    fun from(product: Product): ProductResponse {
+    fun from(product: Product, idGenerator: TsidGenerator): ProductResponse {
       return ProductResponse(
-        id = product.id!!,
+        id = idGenerator.encode(product.id),
         name = product.name,
         description = product.description,
         categoryId = product.category.id!!,

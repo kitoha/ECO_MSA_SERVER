@@ -6,23 +6,10 @@ import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-/**
- * 주문 엔티티
- *
- * **보안:**
- * - Sequential ID 대신 TSID 사용 (주문량/매출 추정 방지)
- */
 @Entity
 @Table(name = "orders")
 class Order(
-  /**
-   * TSID (Time-Sorted Unique Identifier)
-   *
-   * Sequential ID 문제:
-   * - /orders/1, /orders/2 → 일일 주문량 추정 가능
-   * - 경쟁사에 매출 정보 노출
-   * - Enumeration Attack 취약
-   */
+
   @Id
   @Column(name = "id")
   val id: Long,
