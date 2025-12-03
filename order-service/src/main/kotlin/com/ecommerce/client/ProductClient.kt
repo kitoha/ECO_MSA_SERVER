@@ -48,12 +48,12 @@ class ProductClient(
     }
 
     fun getProductsByIds(productIds: List<String>): List<ProductResponse> {
-        return try {
-            require(productIds.size <= MAX_BATCH_SIZE) {
-                "한번에 최대 ${MAX_BATCH_SIZE}개까지 조회 가능합니다. 요청: ${productIds.size}개. " +
-                "getProductsByIdsChunked()를 사용하세요."
-            }
+        require(productIds.size <= MAX_BATCH_SIZE) {
+            "한번에 최대 ${MAX_BATCH_SIZE}개까지 조회 가능합니다. 요청: ${productIds.size}개. " +
+            "getProductsByIdsChunked()를 사용하세요."
+        }
 
+        return try {
             logger.debug("Fetching products in batch: {}", productIds)
 
             webClient.get()
