@@ -129,6 +129,18 @@ class Payment(
     return status == PaymentStatus.COMPLETED
   }
 
+  fun isFailed(): Boolean {
+    return status == PaymentStatus.FAILED
+  }
+
+  fun isCancelled(): Boolean {
+    return status == PaymentStatus.CANCELLED
+  }
+
+  fun isRefunded(): Boolean {
+    return status == PaymentStatus.REFUNDED
+  }
+
   override fun toString(): String {
     return "Payment(id=$id, orderId='$orderId', userId='$userId', " +
       "amount=$amount, status=$status, paymentMethod=$paymentMethod, " +

@@ -1,5 +1,6 @@
 package com.ecommerce.service
 
+import com.ecommerce.client.PaymentGateway
 import com.ecommerce.entity.Payment
 import com.ecommerce.entity.PaymentTransaction
 import com.ecommerce.enums.PaymentStatus
@@ -23,7 +24,8 @@ class PaymentService(
   private val paymentRepository: PaymentRepository,
   private val paymentTransactionRepository: PaymentTransactionRepository,
   private val kafkaTemplate: KafkaTemplate<String, Any>,
-  private val idGenerator: TsidGenerator
+  private val idGenerator: TsidGenerator,
+  private val paymentGateway: PaymentGateway
 ) {
 
   private val logger = LoggerFactory.getLogger(PaymentService::class.java)
@@ -106,32 +108,95 @@ class PaymentService(
       paymentMethod = payment.paymentMethod ?: throw IllegalStateException("결제 수단이 설정되지 않았습니다")
     )
 
-    val transaction = PaymentTransaction.success(
-      transactionType = TransactionType.AUTH,
-      amount = payment.amount,
-      pgTransactionId = request.pgTransactionId,
-      pgResponseCode = "SUCCESS",
-      pgResponseMessage = "결제 승인 성공"
-    )
-    payment.addTransaction(transaction)
+    try {
+      // PG사에 실제 결제 승인 요청
+      val pgResponse = paymentGateway.authorize(
+        orderId = payment.orderId,
+        amount = payment.amount,
+        paymentMethod = payment.paymentMethod!!
+      )
 
-    payment.complete()
+      if (pgResponse.success) {
+        val transaction = PaymentTransaction.success(
+          transactionType = TransactionType.AUTH,
+          amount = payment.amount,
+          pgTransactionId = pgResponse.transactionId,
+          pgResponseCode = pgResponse.responseCode,
+          pgResponseMessage = pgResponse.responseMessage
+        )
+        payment.addTransaction(transaction)
 
-    val savedPayment = paymentRepository.save(payment)
+        payment.complete()
 
-    val event = PaymentCompletedEvent(
-      paymentId = savedPayment.id,
-      orderId = savedPayment.orderId,
-      userId = savedPayment.userId,
-      amount = savedPayment.amount,
-      pgProvider = savedPayment.pgProvider ?: "",
-      pgPaymentKey = savedPayment.pgPaymentKey ?: ""
-    )
-    kafkaTemplate.send("payment-completed", savedPayment.orderId, event)
+        val savedPayment = paymentRepository.save(payment)
 
-    logger.info("Payment approved successfully: ${savedPayment.id}")
+        val event = PaymentCompletedEvent(
+          paymentId = savedPayment.id,
+          orderId = savedPayment.orderId,
+          userId = savedPayment.userId,
+          amount = savedPayment.amount,
+          pgProvider = savedPayment.pgProvider ?: "",
+          pgPaymentKey = savedPayment.pgPaymentKey ?: ""
+        )
+        kafkaTemplate.send("payment-completed", savedPayment.orderId, event)
 
-    return PaymentResponse.from(savedPayment, includeTransactions = true)
+        logger.info("Payment approved successfully: ${savedPayment.id}")
+
+        return PaymentResponse.from(savedPayment, includeTransactions = true)
+      } else {
+        // PG사 승인 실패
+        val transaction = PaymentTransaction.failure(
+          transactionType = TransactionType.AUTH,
+          amount = payment.amount,
+          pgTransactionId = pgResponse.transactionId,
+          pgResponseCode = pgResponse.responseCode,
+          pgResponseMessage = pgResponse.responseMessage
+        )
+        payment.addTransaction(transaction)
+
+        payment.fail(pgResponse.responseMessage!!)
+
+        val savedPayment = paymentRepository.save(payment)
+
+        val event = PaymentFailedEvent(
+          paymentId = savedPayment.id,
+          orderId = savedPayment.orderId,
+          userId = savedPayment.userId,
+          amount = savedPayment.amount,
+          failureReason = pgResponse.responseMessage!!
+        )
+        kafkaTemplate.send("payment-failed", savedPayment.orderId, event)
+
+        logger.warn("Payment approval failed: ${savedPayment.id}, reason: ${pgResponse.responseMessage}")
+
+        return PaymentResponse.from(savedPayment, includeTransactions = true)
+      }
+    } catch (e: Exception) {
+      logger.error("PG communication error during payment approval", e)
+
+      val transaction = PaymentTransaction.failure(
+        transactionType = TransactionType.AUTH,
+        amount = payment.amount,
+        pgResponseCode = "ERROR",
+        pgResponseMessage = "PG 통신 오류: ${e.message}"
+      )
+      payment.addTransaction(transaction)
+
+      payment.fail("PG 통신 오류: ${e.message}")
+
+      val savedPayment = paymentRepository.save(payment)
+
+      val event = PaymentFailedEvent(
+        paymentId = savedPayment.id,
+        orderId = savedPayment.orderId,
+        userId = savedPayment.userId,
+        amount = savedPayment.amount,
+        failureReason = "PG 통신 오류: ${e.message}"
+      )
+      kafkaTemplate.send("payment-failed", savedPayment.orderId, event)
+
+      throw PaymentGatewayException("결제 승인 중 PG 통신 오류가 발생했습니다", e)
+    }
   }
 
   @Transactional
@@ -149,15 +214,52 @@ class PaymentService(
       throw InvalidPaymentStateException("완료된 결제는 취소할 수 없습니다. 환불을 진행해주세요")
     }
 
-    payment.cancel(reason)
+    // PG사에 취소 요청 (PROCESSING 상태이고 pgPaymentKey가 있는 경우)
+    if (payment.status == PaymentStatus.PROCESSING && payment.pgPaymentKey != null) {
+      try {
+        val pgResponse = paymentGateway.cancel(
+          pgPaymentKey = payment.pgPaymentKey!!,
+          reason = reason
+        )
 
-    val transaction = PaymentTransaction.success(
-      transactionType = TransactionType.CANCEL,
-      amount = payment.amount,
-      pgResponseCode = "CANCELLED",
-      pgResponseMessage = reason
-    )
-    payment.addTransaction(transaction)
+        val transaction = if (pgResponse.success) {
+          PaymentTransaction.success(
+            transactionType = TransactionType.CANCEL,
+            amount = payment.amount,
+            pgTransactionId = pgResponse.transactionId,
+            pgResponseCode = pgResponse.responseCode,
+            pgResponseMessage = pgResponse.responseMessage
+          )
+        } else {
+          PaymentTransaction.failure(
+            transactionType = TransactionType.CANCEL,
+            amount = payment.amount,
+            pgTransactionId = pgResponse.transactionId,
+            pgResponseCode = pgResponse.responseCode,
+            pgResponseMessage = pgResponse.responseMessage
+          )
+        }
+        payment.addTransaction(transaction)
+
+        if (!pgResponse.success) {
+          throw PaymentCancellationException("PG 취소 실패: ${pgResponse.responseMessage}")
+        }
+      } catch (e: Exception) {
+        logger.error("PG communication error during payment cancellation", e)
+        throw PaymentGatewayException("결제 취소 중 PG 통신 오류가 발생했습니다", e)
+      }
+    } else {
+      // PENDING 상태이거나 pgPaymentKey가 없는 경우 (PG 승인 전)
+      val transaction = PaymentTransaction.success(
+        transactionType = TransactionType.CANCEL,
+        amount = payment.amount,
+        pgResponseCode = "CANCELLED",
+        pgResponseMessage = reason
+      )
+      payment.addTransaction(transaction)
+    }
+
+    payment.cancel(reason)
 
     val savedPayment = paymentRepository.save(payment)
 
@@ -186,30 +288,61 @@ class PaymentService(
       throw PaymentRefundException("환불할 수 있는 상태가 아닙니다: ${payment.status}")
     }
 
-    payment.refund()
+    if (payment.pgPaymentKey == null) {
+      throw PaymentRefundException("PG 결제 키가 없어 환불을 진행할 수 없습니다")
+    }
 
-    val transaction = PaymentTransaction.success(
-      transactionType = TransactionType.REFUND,
-      amount = payment.amount,
-      pgResponseCode = "REFUNDED",
-      pgResponseMessage = request.reason
-    )
-    payment.addTransaction(transaction)
+    try {
+      // PG사에 환불 요청
+      val pgResponse = paymentGateway.refund(
+        pgPaymentKey = payment.pgPaymentKey!!,
+        amount = payment.amount,
+        reason = request.reason
+      )
 
-    val savedPayment = paymentRepository.save(payment)
+      val transaction = if (pgResponse.success) {
+        PaymentTransaction.success(
+          transactionType = TransactionType.REFUND,
+          amount = payment.amount,
+          pgTransactionId = pgResponse.transactionId,
+          pgResponseCode = pgResponse.responseCode,
+          pgResponseMessage = pgResponse.responseMessage
+        )
+      } else {
+        PaymentTransaction.failure(
+          transactionType = TransactionType.REFUND,
+          amount = payment.amount,
+          pgTransactionId = pgResponse.transactionId,
+          pgResponseCode = pgResponse.responseCode,
+          pgResponseMessage = pgResponse.responseMessage
+        )
+      }
+      payment.addTransaction(transaction)
 
-    val event = PaymentRefundedEvent(
-      paymentId = savedPayment.id,
-      orderId = savedPayment.orderId,
-      userId = savedPayment.userId,
-      amount = savedPayment.amount,
-      reason = request.reason
-    )
-    kafkaTemplate.send("payment-refunded", savedPayment.orderId, event)
+      if (!pgResponse.success) {
+        throw PaymentRefundException("PG 환불 실패: ${pgResponse.responseMessage}")
+      }
 
-    logger.info("Payment refunded successfully: ${savedPayment.id}")
+      payment.refund()
 
-    return PaymentResponse.from(savedPayment, includeTransactions = true)
+      val savedPayment = paymentRepository.save(payment)
+
+      val event = PaymentRefundedEvent(
+        paymentId = savedPayment.id,
+        orderId = savedPayment.orderId,
+        userId = savedPayment.userId,
+        amount = savedPayment.amount,
+        reason = request.reason
+      )
+      kafkaTemplate.send("payment-refunded", savedPayment.orderId, event)
+
+      logger.info("Payment refunded successfully: ${savedPayment.id}")
+
+      return PaymentResponse.from(savedPayment, includeTransactions = true)
+    } catch (e: Exception) {
+      logger.error("PG communication error during payment refund", e)
+      throw PaymentGatewayException("결제 환불 중 PG 통신 오류가 발생했습니다", e)
+    }
   }
 
   @Transactional

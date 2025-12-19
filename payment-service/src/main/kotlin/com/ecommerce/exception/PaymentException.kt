@@ -21,3 +21,13 @@ class PaymentAlreadyCancelledException(id: Long) : PaymentException("이미 취�
 class PaymentRefundException(message: String) : PaymentException(message)
 
 class DuplicateOrderPaymentException(orderId: String) : PaymentException("주문 ID에 대한 결제가 이미 존재합니다: $orderId")
+
+class PaymentGatewayException(message: String, cause: Throwable? = null) : PaymentException(message) {
+  init {
+    if (cause != null) {
+      initCause(cause)
+    }
+  }
+}
+
+class PaymentCancellationException(message: String) : PaymentException(message)
