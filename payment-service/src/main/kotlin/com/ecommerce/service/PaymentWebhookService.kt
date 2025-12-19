@@ -1,24 +1,19 @@
 package com.ecommerce.service
 
-import com.ecommerce.client.PaymentGateway
 import com.ecommerce.entity.PaymentTransaction
 import com.ecommerce.enums.TransactionType
-import com.ecommerce.event.PaymentCompletedEvent
-import com.ecommerce.event.PaymentFailedEvent
-import com.ecommerce.exception.PaymentNotFoundException
 import com.ecommerce.exception.PaymentNotFoundByOrderIdException
 import com.ecommerce.repository.PaymentRepository
 import com.ecommerce.request.PaymentWebhookRequest
 import org.slf4j.LoggerFactory
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class PaymentWebhookService(
   private val paymentRepository: PaymentRepository,
-  private val paymentGateway: PaymentGateway,
-  private val kafkaTemplate: KafkaTemplate<String, Any>
+  private val gatewayAdapter: PaymentGatewayAdapter,
+  private val eventPublisher: PaymentEventPublisher
 ) {
 
   private val logger = LoggerFactory.getLogger(PaymentWebhookService::class.java)
@@ -28,7 +23,7 @@ class PaymentWebhookService(
     logger.info("Processing payment webhook: eventType=${request.eventType}, orderId=${request.orderId}")
 
     // Webhook 검증
-    if (!paymentGateway.verifyWebhook(signature, payload)) {
+    if (!gatewayAdapter.verifyWebhook(signature, payload)) {
       logger.error("Invalid webhook signature for orderId: ${request.orderId}")
       throw SecurityException("유효하지 않은 Webhook 요청입니다")
     }
@@ -72,15 +67,7 @@ class PaymentWebhookService(
 
     val savedPayment = paymentRepository.save(payment)
 
-    val event = PaymentCompletedEvent(
-      paymentId = savedPayment.id,
-      orderId = savedPayment.orderId,
-      userId = savedPayment.userId,
-      amount = savedPayment.amount,
-      pgProvider = savedPayment.pgProvider ?: "",
-      pgPaymentKey = savedPayment.pgPaymentKey ?: ""
-    )
-    kafkaTemplate.send("payment-completed", savedPayment.orderId, event)
+    eventPublisher.publishPaymentCompleted(savedPayment)
 
     logger.info("Payment completed via webhook: ${savedPayment.id}")
   }
@@ -107,14 +94,7 @@ class PaymentWebhookService(
 
     val savedPayment = paymentRepository.save(payment)
 
-    val event = PaymentFailedEvent(
-      paymentId = savedPayment.id,
-      orderId = savedPayment.orderId,
-      userId = savedPayment.userId,
-      amount = savedPayment.amount,
-      failureReason = request.responseMessage
-    )
-    kafkaTemplate.send("payment-failed", savedPayment.orderId, event)
+    eventPublisher.publishPaymentFailed(savedPayment, request.responseMessage)
 
     logger.info("Payment failed via webhook: ${savedPayment.id}")
   }

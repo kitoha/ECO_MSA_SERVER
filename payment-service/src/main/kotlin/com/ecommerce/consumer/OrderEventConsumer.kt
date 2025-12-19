@@ -3,7 +3,7 @@ package com.ecommerce.consumer
 import com.ecommerce.enums.PaymentMethod
 import com.ecommerce.event.OrderCreatedEvent
 import com.ecommerce.request.CreatePaymentRequest
-import com.ecommerce.service.PaymentService
+import com.ecommerce.service.PaymentCommandService
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class OrderEventConsumer(
-  private val paymentService: PaymentService
+  private val commandService: PaymentCommandService
 ) {
 
   private val logger = LoggerFactory.getLogger(OrderEventConsumer::class.java)
@@ -32,7 +32,7 @@ class OrderEventConsumer(
         paymentMethod = PaymentMethod.CARD
       )
 
-      paymentService.createPayment(request)
+      commandService.createPayment(request)
 
       acknowledgment.acknowledge()
       logger.info("Payment created for order: ${event.orderNumber}")

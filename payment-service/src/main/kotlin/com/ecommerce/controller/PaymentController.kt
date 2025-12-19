@@ -4,34 +4,36 @@ import com.ecommerce.request.CreatePaymentRequest
 import com.ecommerce.request.PaymentApprovalRequest
 import com.ecommerce.request.PaymentRefundRequest
 import com.ecommerce.response.PaymentResponse
-import com.ecommerce.service.PaymentService
+import com.ecommerce.service.PaymentCommandService
+import com.ecommerce.service.PaymentQueryService
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/payments")
 class PaymentController(
-  private val paymentService: PaymentService
+  private val commandService: PaymentCommandService,
+  private val queryService: PaymentQueryService
 ) {
 
   @PostMapping
   fun createPayment(@Valid @RequestBody request: CreatePaymentRequest): PaymentResponse {
-    return paymentService.createPayment(request)
+    return commandService.createPayment(request)
   }
 
   @GetMapping("/{paymentId}")
   fun getPayment(@PathVariable paymentId: Long): PaymentResponse {
-    return paymentService.getPayment(paymentId)
+    return queryService.getPayment(paymentId)
   }
 
   @GetMapping("/order/{orderId}")
   fun getPaymentByOrderId(@PathVariable orderId: String): PaymentResponse {
-    return paymentService.getPaymentByOrderId(orderId)
+    return queryService.getPaymentByOrderId(orderId)
   }
 
   @GetMapping("/user/{userId}")
   fun getPaymentsByUserId(@PathVariable userId: String): List<PaymentResponse> {
-    return paymentService.getPaymentsByUserId(userId)
+    return queryService.getPaymentsByUserId(userId)
   }
 
   @PostMapping("/{paymentId}/approve")
@@ -39,7 +41,7 @@ class PaymentController(
     @PathVariable paymentId: Long,
     @Valid @RequestBody request: PaymentApprovalRequest
   ): PaymentResponse {
-    return paymentService.approvePayment(paymentId, request)
+    return commandService.approvePayment(paymentId, request)
   }
 
   @PostMapping("/{paymentId}/cancel")
@@ -47,7 +49,7 @@ class PaymentController(
     @PathVariable paymentId: Long,
     @RequestParam(required = false, defaultValue = "사용자 요청") reason: String
   ): PaymentResponse {
-    return paymentService.cancelPayment(paymentId, reason)
+    return commandService.cancelPayment(paymentId, reason)
   }
 
   @PostMapping("/{paymentId}/refund")
@@ -55,6 +57,6 @@ class PaymentController(
     @PathVariable paymentId: Long,
     @Valid @RequestBody request: PaymentRefundRequest
   ): PaymentResponse {
-    return paymentService.refundPayment(paymentId, request)
+    return commandService.refundPayment(paymentId, request)
   }
 }
