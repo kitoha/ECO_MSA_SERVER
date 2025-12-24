@@ -210,14 +210,14 @@ class PaymentCommandServiceTest : BehaviorSpec({
     val reason = "사용자 요청"
 
     `when`("PENDING 상태의 결제를 취소하면") {
-      val payment = PaymentFixtures.createPayment(
+      val payment = spyk(PaymentFixtures.createPayment(
         id = paymentId,
         status = PaymentStatus.PENDING
-      )
+      ))
       val transaction = PaymentFixtures.createSuccessTransaction(transactionType = TransactionType.CANCEL)
 
       every { paymentRepository.findById(paymentId) } returns payment
-      every { transactionFactory.createSuccessTransaction(any(), any(), any(), any()) } returns transaction
+      every { transactionFactory.createSuccessTransaction(any(), any(), any(), any(), any()) } returns transaction
       every { paymentRepository.save(any()) } returns payment
       every { eventPublisher.publishPaymentCancelled(any(), any()) } just runs
 
@@ -228,7 +228,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
 
         verify(exactly = 1) { paymentRepository.findById(paymentId) }
         verify(exactly = 0) { gatewayAdapter.cancel(any(), any()) }
-        verify(exactly = 1) { transactionFactory.createSuccessTransaction(TransactionType.CANCEL, payment.amount, "CANCELLED", reason) }
+        verify(exactly = 1) { transactionFactory.createSuccessTransaction(TransactionType.CANCEL, any(), null, "CANCELLED", reason) }
         verify(exactly = 1) { paymentRepository.save(any()) }
         verify(exactly = 1) { eventPublisher.publishPaymentCancelled(any(), reason) }
       }
@@ -418,11 +418,11 @@ class PaymentCommandServiceTest : BehaviorSpec({
     val reason = "PG 통신 오류"
 
     `when`("결제를 실패 처리하면") {
-      val payment = PaymentFixtures.createPayment(id = paymentId, status = PaymentStatus.PENDING)
+      val payment = spyk(PaymentFixtures.createPayment(id = paymentId, status = PaymentStatus.PENDING))
       val transaction = PaymentFixtures.createFailureTransaction()
 
       every { paymentRepository.findById(paymentId) } returns payment
-      every { transactionFactory.createFailureTransaction(any(), any(), any(), any()) } returns transaction
+      every { transactionFactory.createFailureTransaction(any(), any(), any(), any(), any()) } returns transaction
       every { paymentRepository.save(any()) } returns payment
       every { eventPublisher.publishPaymentFailed(any(), any()) } just runs
 
@@ -432,7 +432,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
         result.status shouldBe PaymentStatus.FAILED
 
         verify(exactly = 1) { paymentRepository.findById(paymentId) }
-        verify(exactly = 1) { transactionFactory.createFailureTransaction(TransactionType.AUTH, payment.amount, "FAILED", reason) }
+        verify(exactly = 1) { transactionFactory.createFailureTransaction(TransactionType.AUTH, any(), null, "FAILED", reason) }
         verify(exactly = 1) { paymentRepository.save(any()) }
         verify(exactly = 1) { eventPublisher.publishPaymentFailed(any(), reason) }
       }

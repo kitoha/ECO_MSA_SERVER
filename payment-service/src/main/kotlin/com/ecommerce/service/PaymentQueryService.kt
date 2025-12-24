@@ -29,7 +29,7 @@ class PaymentQueryService(
     logger.debug("Fetching payment by orderId: $orderId")
 
     val payment = paymentRepository.findByOrderId(orderId)
-      ?: throw PaymentNotFoundByOrderIdException("주문에 대한 결제를 찾을 수 없습니다: $orderId")
+      ?: throw PaymentNotFoundByOrderIdException(orderId)
 
     return PaymentResponse.from(payment, includeTransactions = true)
   }

@@ -81,7 +81,7 @@ class PaymentQueryServiceTest : BehaviorSpec({
         val exception = shouldThrow<PaymentNotFoundByOrderIdException> {
           service.getPaymentByOrderId(orderId)
         }
-        exception.message shouldBe "주문에 대한 결제를 찾을 수 없습니다: $orderId"
+        exception.message shouldBe "주문 ID로 결제 정보를 찾을 수 없습니다: $orderId"
 
         verify(exactly = 1) { paymentRepository.findByOrderId(orderId) }
       }
