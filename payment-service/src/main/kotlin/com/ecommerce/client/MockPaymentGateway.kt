@@ -1,6 +1,7 @@
 package com.ecommerce.client
 
 import com.ecommerce.enums.PaymentMethod
+import com.ecommerce.util.sanitizeForLog
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -16,7 +17,7 @@ class MockPaymentGateway : PaymentGateway {
     amount: BigDecimal,
     paymentMethod: PaymentMethod
   ): PaymentGatewayResponse {
-    logger.info("Mock authorize payment: orderId=$orderId, amount=$amount, method=$paymentMethod")
+    logger.info("Mock authorize payment: orderId=${orderId.sanitizeForLog()}, amount=$amount, method=$paymentMethod")
 
     return PaymentGatewayResponse(
       success = true,
@@ -32,7 +33,7 @@ class MockPaymentGateway : PaymentGateway {
     pgPaymentKey: String,
     amount: BigDecimal
   ): PaymentGatewayResponse {
-    logger.info("Mock capture payment: pgPaymentKey=$pgPaymentKey, amount=$amount")
+    logger.info("Mock capture payment: pgPaymentKey=${pgPaymentKey.sanitizeForLog()}, amount=$amount")
 
     return PaymentGatewayResponse(
       success = true,
@@ -48,7 +49,7 @@ class MockPaymentGateway : PaymentGateway {
     pgPaymentKey: String,
     reason: String
   ): PaymentGatewayResponse {
-    logger.info("Mock cancel payment: pgPaymentKey=$pgPaymentKey, reason=$reason")
+    logger.info("Mock cancel payment: pgPaymentKey=${pgPaymentKey.sanitizeForLog()}, reason=${reason.sanitizeForLog()}")
 
     return PaymentGatewayResponse(
       success = true,
@@ -65,7 +66,7 @@ class MockPaymentGateway : PaymentGateway {
     amount: BigDecimal,
     reason: String
   ): PaymentGatewayResponse {
-    logger.info("Mock refund payment: pgPaymentKey=$pgPaymentKey, amount=$amount, reason=$reason")
+    logger.info("Mock refund payment: pgPaymentKey=${pgPaymentKey.sanitizeForLog()}, amount=$amount, reason=${reason.sanitizeForLog()}")
 
     return PaymentGatewayResponse(
       success = true,
@@ -81,7 +82,7 @@ class MockPaymentGateway : PaymentGateway {
     signature: String,
     payload: String
   ): Boolean {
-    logger.info("Mock verify webhook: signature=$signature")
+    logger.info("Mock verify webhook: signature=${signature.sanitizeForLog()}")
     return true
   }
 }

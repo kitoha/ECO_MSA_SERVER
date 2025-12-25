@@ -99,7 +99,7 @@ class PaymentCommandService(
       payment.fail(failureReason)
       val savedPayment = paymentRepository.save(payment)
       eventPublisher.publishPaymentFailed(savedPayment, failureReason)
-      logger.warn("Payment approval failed: ${savedPayment.id}, reason: $failureReason")
+      logger.warn("Payment approval failed: ${savedPayment.id}, reason: ${failureReason.sanitizeForLog()}")
       return PaymentResponse.from(savedPayment, includeTransactions = true)
     }
   }
@@ -129,7 +129,7 @@ class PaymentCommandService(
 
     eventPublisher.publishPaymentCancelled(savedPayment, reason)
 
-    logger.info("Payment cancelled: ${savedPayment.id}, reason: $reason")
+    logger.info("Payment cancelled: ${savedPayment.id}, reason: ${reason.sanitizeForLog()}")
 
     return PaymentResponse.from(savedPayment, includeTransactions = true)
   }
@@ -164,7 +164,7 @@ class PaymentCommandService(
     payment.addTransaction(transaction)
 
     if (!pgResponse.success) {
-      throw PaymentRefundException("PG 환불 실패: ${pgResponse.responseMessage}")
+      throw PaymentRefundException("PG 환불 실패: ${pgResponse.responseMessage.sanitizeForLog()}")
     }
 
     payment.refund()
@@ -185,7 +185,7 @@ class PaymentCommandService(
     backoff = Backoff(delay = 100, multiplier = 2.0)
   )
   fun failPayment(paymentId: Long, reason: String): PaymentResponse {
-    logger.info("Failing payment: $paymentId, reason: $reason")
+    logger.info("Failing payment: $paymentId, reason: ${reason.sanitizeForLog()}")
 
     val payment = findPaymentById(paymentId)
 
@@ -216,7 +216,7 @@ class PaymentCommandService(
   private fun validatePaymentDoesNotExist(orderId: String) {
     val existingPayment = paymentRepository.findByOrderId(orderId)
     if (existingPayment != null) {
-      throw DuplicateOrderPaymentException("이미 해당 주문에 대한 결제가 존재합니다: $orderId")
+      throw DuplicateOrderPaymentException("이미 해당 주문에 대한 결제가 존재합니다: ${orderId.sanitizeForLog()}")
     }
   }
 
@@ -263,7 +263,7 @@ class PaymentCommandService(
     payment.addTransaction(transaction)
 
     if (!pgResponse.success) {
-      throw PaymentCancellationException("PG 취소 실패: ${pgResponse.responseMessage}")
+      throw PaymentCancellationException("PG 취소 실패: ${pgResponse.responseMessage.sanitizeForLog()}")
     }
   }
 
