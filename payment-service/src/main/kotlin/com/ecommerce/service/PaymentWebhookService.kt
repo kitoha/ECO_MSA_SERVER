@@ -5,6 +5,7 @@ import com.ecommerce.enums.TransactionType
 import com.ecommerce.exception.PaymentNotFoundByOrderIdException
 import com.ecommerce.repository.PaymentRepository
 import com.ecommerce.request.PaymentWebhookRequest
+import com.ecommerce.util.sanitizeForLog
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,11 +21,11 @@ class PaymentWebhookService(
 
   @Transactional
   fun processPaymentWebhook(request: PaymentWebhookRequest, signature: String, payload: String) {
-    logger.info("Processing payment webhook: eventType=${request.eventType}, orderId=${request.orderId}")
+    logger.info("Processing payment webhook: eventType=${request.eventType.sanitizeForLog()}, orderId=${request.orderId.sanitizeForLog()}")
 
     // Webhook 검증
     if (!gatewayAdapter.verifyWebhook(signature, payload)) {
-      logger.error("Invalid webhook signature for orderId: ${request.orderId}")
+      logger.error("Invalid webhook signature for orderId: ${request.orderId.sanitizeForLog()}")
       throw SecurityException("유효하지 않은 Webhook 요청입니다")
     }
 
@@ -34,7 +35,7 @@ class PaymentWebhookService(
       "PAYMENT_CANCELLED" -> handlePaymentCancelled(request)
       "PAYMENT_REFUNDED" -> handlePaymentRefunded(request)
       else -> {
-        logger.warn("Unknown webhook event type: ${request.eventType}")
+        logger.warn("Unknown webhook event type: ${request.eventType.sanitizeForLog()}")
       }
     }
   }

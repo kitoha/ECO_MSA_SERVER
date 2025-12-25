@@ -2,6 +2,7 @@ package com.ecommerce.controller
 
 import com.ecommerce.request.PaymentWebhookRequest
 import com.ecommerce.service.PaymentWebhookService
+import com.ecommerce.util.sanitizeForLog
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -21,7 +22,7 @@ class PaymentWebhookController(
     @RequestBody payload: String
   ): ResponseEntity<Map<String, String>> {
     return try {
-      logger.info("Received webhook: eventType=${request.eventType}, orderId=${request.orderId}")
+      logger.info("Received webhook: eventType=${request.eventType.sanitizeForLog()}, orderId=${request.orderId.sanitizeForLog()}")
 
       webhookService.processPaymentWebhook(request, signature, payload)
 

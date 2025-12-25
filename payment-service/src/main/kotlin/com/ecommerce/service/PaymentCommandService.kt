@@ -10,6 +10,7 @@ import com.ecommerce.request.CreatePaymentRequest
 import com.ecommerce.request.PaymentApprovalRequest
 import com.ecommerce.request.PaymentRefundRequest
 import com.ecommerce.response.PaymentResponse
+import com.ecommerce.util.sanitizeForLog
 import org.slf4j.LoggerFactory
 import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.retry.annotation.Backoff
@@ -30,7 +31,7 @@ class PaymentCommandService(
 
   @Transactional
   fun createPayment(request: CreatePaymentRequest): PaymentResponse {
-    logger.info("Creating payment for order: ${request.orderId}")
+    logger.info("Creating payment for order: ${request.orderId.sanitizeForLog()}")
 
     validatePaymentDoesNotExist(request.orderId)
 
