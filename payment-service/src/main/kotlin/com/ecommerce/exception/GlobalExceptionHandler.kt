@@ -135,6 +135,26 @@ class GlobalExceptionHandler {
             ))
     }
 
+    @ExceptionHandler(PaymentCancellationException::class)
+    fun handlePaymentCancellation(ex: PaymentCancellationException): ResponseEntity<ErrorResponse> {
+        log.error("Payment cancellation error: {}", ex.message)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ErrorResponse(
+                message = ex.message ?: "결제 취소 중 오류가 발생했습니다",
+                code = "PAYMENT_CANCELLATION_ERROR"
+            ))
+    }
+
+    @ExceptionHandler(PaymentGatewayException::class)
+    fun handlePaymentGateway(ex: PaymentGatewayException): ResponseEntity<ErrorResponse> {
+        log.error("Payment gateway error: {}", ex.message)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ErrorResponse(
+                message = ex.message ?: "PG 게이트웨이 오류가 발생했습니다",
+                code = "PAYMENT_GATEWAY_ERROR"
+            ))
+    }
+
     @ExceptionHandler(Exception::class)
     fun handleGenericException(ex: Exception): ResponseEntity<ErrorResponse> {
         log.error("Unexpected error occurred", ex)
