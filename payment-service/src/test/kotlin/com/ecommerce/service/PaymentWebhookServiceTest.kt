@@ -171,8 +171,9 @@ class PaymentWebhookServiceTest : BehaviorSpec({
       every { gatewayAdapter.verifyWebhook(signature, payload) } returns true
       every { paymentRepository.findByOrderId("ORDER-003") } returns payment
       every { paymentRepository.save(any()) } returns payment
+      every { eventPublisher.publishPaymentCancelled(any(), any()) } just runs
 
-      then("결제가 취소 상태로 변경되어야 한다") {
+      then("결제가 취소 상태로 변경되고 취소 이벤트가 발행되어야 한다") {
         service.processPaymentWebhook(webhookRequest, signature, payload)
 
         payment.status shouldBe PaymentStatus.CANCELLED
@@ -182,6 +183,7 @@ class PaymentWebhookServiceTest : BehaviorSpec({
         verify(exactly = 1) { gatewayAdapter.verifyWebhook(signature, payload) }
         verify(exactly = 1) { paymentRepository.findByOrderId("ORDER-003") }
         verify(exactly = 1) { paymentRepository.save(payment) }
+        verify(exactly = 1) { eventPublisher.publishPaymentCancelled(payment, "사용자 취소") }
       }
     }
 
@@ -207,8 +209,9 @@ class PaymentWebhookServiceTest : BehaviorSpec({
       every { gatewayAdapter.verifyWebhook(signature, payload) } returns true
       every { paymentRepository.findByOrderId("ORDER-004") } returns payment
       every { paymentRepository.save(any()) } returns payment
+      every { eventPublisher.publishPaymentRefunded(any(), any()) } just runs
 
-      then("결제가 환불 상태로 변경되어야 한다") {
+      then("결제가 환불 상태로 변경되고 환불 이벤트가 발행되어야 한다") {
         service.processPaymentWebhook(webhookRequest, signature, payload)
 
         payment.status shouldBe PaymentStatus.REFUNDED
@@ -217,6 +220,7 @@ class PaymentWebhookServiceTest : BehaviorSpec({
         verify(exactly = 1) { gatewayAdapter.verifyWebhook(signature, payload) }
         verify(exactly = 1) { paymentRepository.findByOrderId("ORDER-004") }
         verify(exactly = 1) { paymentRepository.save(payment) }
+        verify(exactly = 1) { eventPublisher.publishPaymentRefunded(payment, "환불 완료") }
       }
     }
 

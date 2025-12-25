@@ -11,6 +11,9 @@ import com.ecommerce.request.PaymentApprovalRequest
 import com.ecommerce.request.PaymentRefundRequest
 import com.ecommerce.response.PaymentResponse
 import org.slf4j.LoggerFactory
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -50,6 +53,11 @@ class PaymentCommandService(
   }
 
   @Transactional
+  @Retryable(
+    retryFor = [ObjectOptimisticLockingFailureException::class],
+    maxAttempts = 3,
+    backoff = Backoff(delay = 100, multiplier = 2.0)
+  )
   fun approvePayment(paymentId: Long, request: PaymentApprovalRequest): PaymentResponse {
     logger.info("Approving payment: $paymentId")
 
@@ -96,6 +104,11 @@ class PaymentCommandService(
   }
 
   @Transactional
+  @Retryable(
+    retryFor = [ObjectOptimisticLockingFailureException::class],
+    maxAttempts = 3,
+    backoff = Backoff(delay = 100, multiplier = 2.0)
+  )
   fun cancelPayment(paymentId: Long, reason: String = "사용자 요청"): PaymentResponse {
     logger.info("Cancelling payment: $paymentId")
 
@@ -121,6 +134,11 @@ class PaymentCommandService(
   }
 
   @Transactional
+  @Retryable(
+    retryFor = [ObjectOptimisticLockingFailureException::class],
+    maxAttempts = 3,
+    backoff = Backoff(delay = 100, multiplier = 2.0)
+  )
   fun refundPayment(paymentId: Long, request: PaymentRefundRequest): PaymentResponse {
     logger.info("Refunding payment: $paymentId")
 
@@ -160,6 +178,11 @@ class PaymentCommandService(
   }
 
   @Transactional
+  @Retryable(
+    retryFor = [ObjectOptimisticLockingFailureException::class],
+    maxAttempts = 3,
+    backoff = Backoff(delay = 100, multiplier = 2.0)
+  )
   fun failPayment(paymentId: Long, reason: String): PaymentResponse {
     logger.info("Failing payment: $paymentId, reason: $reason")
 
@@ -185,7 +208,7 @@ class PaymentCommandService(
   }
 
   private fun findPaymentById(paymentId: Long): Payment {
-    return paymentRepository.findById(paymentId)
+    return paymentRepository.findByIdWithTransactions(paymentId)
       ?: throw PaymentNotFoundException(paymentId)
   }
 

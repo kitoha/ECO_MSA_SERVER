@@ -19,7 +19,7 @@ class PaymentQueryService(
   fun getPayment(paymentId: Long): PaymentResponse {
     logger.debug("Fetching payment by id: $paymentId")
 
-    val payment = paymentRepository.findById(paymentId)
+    val payment = paymentRepository.findByIdWithTransactions(paymentId)
       ?: throw PaymentNotFoundException(paymentId)
 
     return PaymentResponse.from(payment, includeTransactions = true)
@@ -28,7 +28,7 @@ class PaymentQueryService(
   fun getPaymentByOrderId(orderId: String): PaymentResponse {
     logger.debug("Fetching payment by orderId: $orderId")
 
-    val payment = paymentRepository.findByOrderId(orderId)
+    val payment = paymentRepository.findByOrderIdWithTransactions(orderId)
       ?: throw PaymentNotFoundByOrderIdException(orderId)
 
     return PaymentResponse.from(payment, includeTransactions = true)

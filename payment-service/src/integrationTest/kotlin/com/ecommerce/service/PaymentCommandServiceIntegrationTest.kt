@@ -313,6 +313,140 @@ class PaymentCommandServiceIntegrationTest(
             }
         }
 
+        describe("N+1 쿼리 방지 검증") {
+            it("결제 승인 시 트랜잭션을 한 번의 쿼리로 조회해야 한다") {
+                // 데이터 준비
+                val payment = paymentJpaRepository.save(
+                    Payment(
+                        id = idGenerator.generate(),
+                        orderId = "ORDER-N1-001",
+                        userId = "USER-N1-001",
+                        amount = BigDecimal("100000"),
+                        status = PaymentStatus.PENDING,
+                        paymentMethod = PaymentMethod.CARD
+                    )
+                )
+
+                val approvalRequest = PaymentApprovalRequest(
+                    pgProvider = "TOSS",
+                    pgPaymentKey = "PG-KEY-N1-001",
+                    pgTransactionId = "TXN-N1-001"
+                )
+
+                val response = paymentCommandService.approvePayment(payment.id, approvalRequest)
+
+                val transactions = response.transactions
+                transactions.shouldNotBeNull()
+                transactions shouldHaveSize 1
+            }
+
+            it("결제 취소 시 트랜잭션을 한 번의 쿼리로 조회해야 한다") {
+                val payment = paymentJpaRepository.save(
+                    Payment(
+                        id = idGenerator.generate(),
+                        orderId = "ORDER-N1-002",
+                        userId = "USER-N1-002",
+                        amount = BigDecimal("50000"),
+                        status = PaymentStatus.PENDING,
+                        paymentMethod = PaymentMethod.CARD
+                    )
+                )
+
+                val response = paymentCommandService.cancelPayment(payment.id, "사용자 요청")
+
+                val transactions = response.transactions
+                transactions.shouldNotBeNull()
+                transactions.any { it.transactionType == TransactionType.CANCEL } shouldBe true
+            }
+
+            it("결제 환불 시 트랜잭션을 한 번의 쿼리로 조회해야 한다") {
+                val payment = paymentJpaRepository.save(
+                    Payment(
+                        id = idGenerator.generate(),
+                        orderId = "ORDER-N1-003",
+                        userId = "USER-N1-003",
+                        amount = BigDecimal("70000"),
+                        status = PaymentStatus.COMPLETED,
+                        paymentMethod = PaymentMethod.CARD,
+                        pgProvider = "TOSS",
+                        pgPaymentKey = "PG-KEY-N1-003"
+                    )
+                )
+
+                val refundRequest = PaymentRefundRequest(reason = "단순 변심")
+
+                val response = paymentCommandService.refundPayment(payment.id, refundRequest)
+
+                val transactions = response.transactions
+                transactions.shouldNotBeNull()
+                transactions.any { it.transactionType == TransactionType.REFUND } shouldBe true
+            }
+        }
+
+        describe("낙관적 락 재시도 검증") {
+            it("동시에 결제를 수정하려고 할 때 OptimisticLock 예외가 발생하면 자동 재시도해야 한다") {
+                // 데이터 준비
+                val payment = paymentJpaRepository.save(
+                    Payment(
+                        id = idGenerator.generate(),
+                        orderId = "ORDER-OPT-001",
+                        userId = "USER-OPT-001",
+                        amount = BigDecimal("100000"),
+                        status = PaymentStatus.PENDING,
+                        paymentMethod = PaymentMethod.CARD
+                    )
+                )
+
+                val approvalRequest = PaymentApprovalRequest(
+                    pgProvider = "TOSS",
+                    pgPaymentKey = "PG-KEY-OPT-001",
+                    pgTransactionId = "TXN-OPT-001"
+                )
+
+                val response = paymentCommandService.approvePayment(payment.id, approvalRequest)
+
+                response.status shouldBe PaymentStatus.COMPLETED
+            }
+
+            it("결제 취소 시 낙관적 락 충돌이 발생해도 재시도해야 한다") {
+                val payment = paymentJpaRepository.save(
+                    Payment(
+                        id = idGenerator.generate(),
+                        orderId = "ORDER-OPT-002",
+                        userId = "USER-OPT-002",
+                        amount = BigDecimal("50000"),
+                        status = PaymentStatus.PENDING,
+                        paymentMethod = PaymentMethod.CARD
+                    )
+                )
+
+                val response = paymentCommandService.cancelPayment(payment.id, "사용자 요청")
+
+                response.status shouldBe PaymentStatus.CANCELLED
+            }
+
+            it("환불 처리 시 낙관적 락 충돌이 발생해도 재시도해야 한다") {
+                val payment = paymentJpaRepository.save(
+                    Payment(
+                        id = idGenerator.generate(),
+                        orderId = "ORDER-OPT-003",
+                        userId = "USER-OPT-003",
+                        amount = BigDecimal("70000"),
+                        status = PaymentStatus.COMPLETED,
+                        paymentMethod = PaymentMethod.CARD,
+                        pgProvider = "TOSS",
+                        pgPaymentKey = "PG-KEY-OPT-003"
+                    )
+                )
+
+                val refundRequest = PaymentRefundRequest(reason = "단순 변심")
+
+                val response = paymentCommandService.refundPayment(payment.id, refundRequest)
+
+                response.status shouldBe PaymentStatus.REFUNDED
+            }
+        }
+
         describe("예외 처리") {
             it("존재하지 않는 결제 ID로 승인하려고 하면 예외가 발생해야 한다") {
                 val request = PaymentApprovalRequest(

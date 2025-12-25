@@ -119,9 +119,11 @@ class PaymentWebhookService(
 
     payment.cancel(request.responseMessage)
 
-    paymentRepository.save(payment)
+    val savedPayment = paymentRepository.save(payment)
 
-    logger.info("Payment cancelled via webhook: ${payment.id}")
+    eventPublisher.publishPaymentCancelled(savedPayment, request.responseMessage)
+
+    logger.info("Payment cancelled via webhook: ${savedPayment.id}")
   }
 
   private fun handlePaymentRefunded(request: PaymentWebhookRequest) {
@@ -144,8 +146,10 @@ class PaymentWebhookService(
 
     payment.refund()
 
-    paymentRepository.save(payment)
+    val savedPayment = paymentRepository.save(payment)
 
-    logger.info("Payment refunded via webhook: ${payment.id}")
+    eventPublisher.publishPaymentRefunded(savedPayment, request.responseMessage)
+
+    logger.info("Payment refunded via webhook: ${savedPayment.id}")
   }
 }

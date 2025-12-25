@@ -28,7 +28,7 @@ class PaymentQueryServiceTest : BehaviorSpec({
 
     `when`("존재하는 결제 ID로 조회하면") {
       val payment = PaymentFixtures.createPayment(id = paymentId)
-      every { paymentRepository.findById(paymentId) } returns payment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns payment
 
       then("결제 정보를 반환해야 한다") {
         val result = service.getPayment(paymentId)
@@ -39,19 +39,19 @@ class PaymentQueryServiceTest : BehaviorSpec({
         result.amount shouldBe payment.amount
         result.status shouldBe payment.status
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
       }
     }
 
     `when`("존재하지 않는 결제 ID로 조회하면") {
-      every { paymentRepository.findById(paymentId) } returns null
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns null
 
       then("PaymentNotFoundException이 발생해야 한다") {
         shouldThrow<PaymentNotFoundException> {
           service.getPayment(paymentId)
         }
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
       }
     }
   }
@@ -61,7 +61,7 @@ class PaymentQueryServiceTest : BehaviorSpec({
 
     `when`("존재하는 주문 ID로 조회하면") {
       val payment = PaymentFixtures.createPayment(orderId = orderId)
-      every { paymentRepository.findByOrderId(orderId) } returns payment
+      every { paymentRepository.findByOrderIdWithTransactions(orderId) } returns payment
 
       then("결제 정보를 반환해야 한다") {
         val result = service.getPaymentByOrderId(orderId)
@@ -70,12 +70,12 @@ class PaymentQueryServiceTest : BehaviorSpec({
         result.userId shouldBe payment.userId
         result.amount shouldBe payment.amount
 
-        verify(exactly = 1) { paymentRepository.findByOrderId(orderId) }
+        verify(exactly = 1) { paymentRepository.findByOrderIdWithTransactions(orderId) }
       }
     }
 
     `when`("존재하지 않는 주문 ID로 조회하면") {
-      every { paymentRepository.findByOrderId(orderId) } returns null
+      every { paymentRepository.findByOrderIdWithTransactions(orderId) } returns null
 
       then("PaymentNotFoundByOrderIdException이 발생해야 한다") {
         val exception = shouldThrow<PaymentNotFoundByOrderIdException> {
@@ -83,7 +83,7 @@ class PaymentQueryServiceTest : BehaviorSpec({
         }
         exception.message shouldBe "주문 ID로 결제 정보를 찾을 수 없습니다: $orderId"
 
-        verify(exactly = 1) { paymentRepository.findByOrderId(orderId) }
+        verify(exactly = 1) { paymentRepository.findByOrderIdWithTransactions(orderId) }
       }
     }
   }

@@ -122,7 +122,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
       )
       val transaction = PaymentFixtures.createSuccessTransaction()
 
-      every { paymentRepository.findById(paymentId) } returns payment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns payment
       every { gatewayAdapter.authorize(any(), any(), any()) } returns successResponse
       every { transactionFactory.createFromGatewayResponse(any(), any(), any()) } returns transaction
       every { paymentRepository.save(any()) } returns payment
@@ -133,7 +133,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
 
         result.status shouldBe PaymentStatus.COMPLETED
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 1) { gatewayAdapter.authorize(payment.orderId, payment.amount, PaymentMethod.CARD) }
         verify(exactly = 1) { transactionFactory.createFromGatewayResponse(TransactionType.AUTH, payment.amount, successResponse) }
         verify(exactly = 1) { paymentRepository.save(any()) }
@@ -157,7 +157,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
         paymentMethod = PaymentMethod.CARD
       )
 
-      every { paymentRepository.findById(paymentId) } returns pendingPayment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns pendingPayment
       every { gatewayAdapter.authorize(any(), any(), any()) } returns failureResponse
       every { transactionFactory.createFromGatewayResponse(any(), any(), any()) } returns transaction
       every { paymentRepository.save(any()) } returns pendingPayment
@@ -168,7 +168,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
 
         result.status shouldBe PaymentStatus.FAILED
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 1) { gatewayAdapter.authorize(any(), any(), any()) }
         verify(exactly = 1) { paymentRepository.save(any()) }
         verify(exactly = 1) { eventPublisher.publishPaymentFailed(any(), "카드 잔액 부족") }
@@ -180,27 +180,27 @@ class PaymentCommandServiceTest : BehaviorSpec({
         id = paymentId,
         status = PaymentStatus.COMPLETED
       )
-      every { paymentRepository.findById(paymentId) } returns completedPayment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns completedPayment
 
       then("PaymentAlreadyCompletedException이 발생해야 한다") {
         shouldThrow<PaymentAlreadyCompletedException> {
           service.approvePayment(paymentId, request)
         }
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 0) { gatewayAdapter.authorize(any(), any(), any()) }
       }
     }
 
     `when`("존재하지 않는 결제 ID로 승인을 시도하면") {
-      every { paymentRepository.findById(paymentId) } returns null
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns null
 
       then("PaymentNotFoundException이 발생해야 한다") {
         shouldThrow<PaymentNotFoundException> {
           service.approvePayment(paymentId, request)
         }
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
       }
     }
   }
@@ -216,7 +216,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
       ))
       val transaction = PaymentFixtures.createSuccessTransaction(transactionType = TransactionType.CANCEL)
 
-      every { paymentRepository.findById(paymentId) } returns payment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns payment
       every { transactionFactory.createSuccessTransaction(any(), any(), any(), any(), any()) } returns transaction
       every { paymentRepository.save(any()) } returns payment
       every { eventPublisher.publishPaymentCancelled(any(), any()) } just runs
@@ -226,7 +226,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
 
         result.status shouldBe PaymentStatus.CANCELLED
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 0) { gatewayAdapter.cancel(any(), any()) }
         verify(exactly = 1) { transactionFactory.createSuccessTransaction(TransactionType.CANCEL, any(), null, "CANCELLED", reason) }
         verify(exactly = 1) { paymentRepository.save(any()) }
@@ -252,7 +252,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
       )
       val transaction = PaymentFixtures.createSuccessTransaction(transactionType = TransactionType.CANCEL)
 
-      every { paymentRepository.findById(paymentId) } returns payment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns payment
       every { gatewayAdapter.cancel(any(), any()) } returns cancelResponse
       every { transactionFactory.createFromGatewayResponse(any(), any(), any()) } returns transaction
       every { paymentRepository.save(any()) } returns payment
@@ -263,7 +263,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
 
         result.status shouldBe PaymentStatus.CANCELLED
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 1) { gatewayAdapter.cancel("toss_key_123", reason) }
         verify(exactly = 1) { transactionFactory.createFromGatewayResponse(TransactionType.CANCEL, payment.amount, cancelResponse) }
         verify(exactly = 1) { paymentRepository.save(any()) }
@@ -276,14 +276,14 @@ class PaymentCommandServiceTest : BehaviorSpec({
         id = paymentId,
         status = PaymentStatus.CANCELLED
       )
-      every { paymentRepository.findById(paymentId) } returns cancelledPayment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns cancelledPayment
 
       then("PaymentAlreadyCancelledException이 발생해야 한다") {
         shouldThrow<PaymentAlreadyCancelledException> {
           service.cancelPayment(paymentId, reason)
         }
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 0) { paymentRepository.save(any()) }
       }
     }
@@ -293,7 +293,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
         id = paymentId,
         status = PaymentStatus.COMPLETED
       )
-      every { paymentRepository.findById(paymentId) } returns completedPayment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns completedPayment
 
       then("InvalidPaymentStateException이 발생해야 한다") {
         val exception = shouldThrow<InvalidPaymentStateException> {
@@ -301,7 +301,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
         }
         exception.message shouldBe "완료된 결제는 취소할 수 없습니다. 환불을 진행해주세요"
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
       }
     }
   }
@@ -326,7 +326,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
       )
       val transaction = PaymentFixtures.createSuccessTransaction(transactionType = TransactionType.REFUND)
 
-      every { paymentRepository.findById(paymentId) } returns payment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns payment
       every { gatewayAdapter.refund(any(), any(), any()) } returns refundResponse
       every { transactionFactory.createFromGatewayResponse(any(), any(), any()) } returns transaction
       every { paymentRepository.save(any()) } returns payment
@@ -337,7 +337,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
 
         result.status shouldBe PaymentStatus.REFUNDED
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 1) { gatewayAdapter.refund("toss_key_123", payment.amount, request.reason) }
         verify(exactly = 1) { transactionFactory.createFromGatewayResponse(TransactionType.REFUND, payment.amount, refundResponse) }
         verify(exactly = 1) { paymentRepository.save(any()) }
@@ -361,7 +361,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
       )
       val transaction = PaymentFixtures.createFailureTransaction(transactionType = TransactionType.REFUND)
 
-      every { paymentRepository.findById(paymentId) } returns payment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns payment
       every { gatewayAdapter.refund(any(), any(), any()) } returns failureResponse
       every { transactionFactory.createFromGatewayResponse(any(), any(), any()) } returns transaction
 
@@ -371,7 +371,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
         }
         exception.message shouldBe "PG 환불 실패: 환불 처리 실패"
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 1) { gatewayAdapter.refund(any(), any(), any()) }
         verify(exactly = 0) { paymentRepository.save(any()) }
       }
@@ -382,14 +382,14 @@ class PaymentCommandServiceTest : BehaviorSpec({
         id = paymentId,
         status = PaymentStatus.PENDING
       )
-      every { paymentRepository.findById(paymentId) } returns pendingPayment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns pendingPayment
 
       then("PaymentRefundException이 발생해야 한다") {
         shouldThrow<PaymentRefundException> {
           service.refundPayment(paymentId, request)
         }
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 0) { gatewayAdapter.refund(any(), any(), any()) }
       }
     }
@@ -400,7 +400,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
         status = PaymentStatus.COMPLETED,
         pgPaymentKey = null
       )
-      every { paymentRepository.findById(paymentId) } returns payment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns payment
 
       then("PaymentRefundException이 발생해야 한다") {
         val exception = shouldThrow<PaymentRefundException> {
@@ -408,7 +408,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
         }
         exception.message shouldBe "PG 결제 키가 없어 환불을 진행할 수 없습니다"
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
       }
     }
   }
@@ -421,7 +421,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
       val payment = spyk(PaymentFixtures.createPayment(id = paymentId, status = PaymentStatus.PENDING))
       val transaction = PaymentFixtures.createFailureTransaction()
 
-      every { paymentRepository.findById(paymentId) } returns payment
+      every { paymentRepository.findByIdWithTransactions(paymentId) } returns payment
       every { transactionFactory.createFailureTransaction(any(), any(), any(), any(), any()) } returns transaction
       every { paymentRepository.save(any()) } returns payment
       every { eventPublisher.publishPaymentFailed(any(), any()) } just runs
@@ -431,7 +431,7 @@ class PaymentCommandServiceTest : BehaviorSpec({
 
         result.status shouldBe PaymentStatus.FAILED
 
-        verify(exactly = 1) { paymentRepository.findById(paymentId) }
+        verify(exactly = 1) { paymentRepository.findByIdWithTransactions(paymentId) }
         verify(exactly = 1) { transactionFactory.createFailureTransaction(TransactionType.AUTH, any(), null, "FAILED", reason) }
         verify(exactly = 1) { paymentRepository.save(any()) }
         verify(exactly = 1) { eventPublisher.publishPaymentFailed(any(), reason) }
