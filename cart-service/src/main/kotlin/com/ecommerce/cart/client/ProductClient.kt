@@ -56,5 +56,3 @@ class ProductClient(
         }
     }
 }
-
-class ProductClientException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)

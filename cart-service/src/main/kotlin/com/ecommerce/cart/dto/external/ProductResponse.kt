@@ -17,8 +17,3 @@ data class ProductResponse(
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?
 )
-
-data class ProductImageResponse(
-    val url: String,
-    val displayOrder: Int
-)
