@@ -47,12 +47,7 @@ class ProductClient(
     }
 
     fun isProductAvailable(productId: String): Boolean {
-        return try {
-            val product = getProductById(productId)
-            product?.status == "ACTIVE"
-        } catch (e: Exception) {
-            logger.error("Failed to check product availability: $productId", e)
-            false
-        }
+        val product = getProductById(productId)
+        return product?.status == "ACTIVE"
     }
 }

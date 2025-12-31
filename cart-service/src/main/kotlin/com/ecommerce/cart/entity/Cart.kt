@@ -1,5 +1,6 @@
 package com.ecommerce.cart.entity
 
+import com.ecommerce.cart.generator.TsidGenerator
 import jakarta.persistence.*
 import java.math.BigDecimal
 
@@ -35,6 +36,7 @@ class Cart(
             existingItem.updateQuantity(existingItem.quantity + quantity)
         } else {
             val newItem = CartItem(
+                id = TsidGenerator.generate(),
                 cart = this,
                 productId = productId,
                 productName = productName,

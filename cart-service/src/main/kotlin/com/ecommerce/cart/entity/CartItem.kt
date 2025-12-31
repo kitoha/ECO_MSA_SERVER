@@ -1,6 +1,5 @@
 package com.ecommerce.cart.entity
 
-import com.ecommerce.cart.generator.TsidGenerator
 import jakarta.persistence.*
 import java.math.BigDecimal
 
@@ -9,7 +8,7 @@ import java.math.BigDecimal
 class CartItem(
     @Id
     @Column(name = "id")
-    val id: Long = TsidGenerator.generate(),
+    val id: Long,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id", nullable = false)

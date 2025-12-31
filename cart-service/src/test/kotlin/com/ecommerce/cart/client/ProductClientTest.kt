@@ -185,10 +185,10 @@ class ProductClientTest : BehaviorSpec({
         `when`("예외가 발생하면") {
             every { webClient.get() } throws RuntimeException("Connection failed")
 
-            then("false를 반환해야 한다") {
-                val result = productClient.isProductAvailable(productId)
-
-                result shouldBe false
+            then("ProductClientException을 발생시켜야 한다") {
+                shouldThrow<ProductClientException> {
+                    productClient.isProductAvailable(productId)
+                }
             }
         }
     }
