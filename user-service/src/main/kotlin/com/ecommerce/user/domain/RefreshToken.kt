@@ -4,10 +4,7 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
-@Table(
-    name = "refresh_tokens",
-    indexes = [Index(name = "idx_refresh_token_value", columnList = "tokenValue")]
-)
+@Table(name = "refresh_tokens",)
 class RefreshToken(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,6 +15,7 @@ class RefreshToken(
 
     @Column(nullable = false, unique = true)
     val tokenValue: String,
+
     @Column(nullable = false)
     val issuedAt: LocalDateTime,
 
@@ -25,11 +23,18 @@ class RefreshToken(
     val expiresAt: LocalDateTime,
 
     @Column(nullable = false)
-    val rotationGroup: String
+    val rotationGroup: String,
+
+    @Column(nullable = false)
+    var used: Boolean = false
 
 ) : BaseEntity() {
 
     fun isExpired(now: LocalDateTime = LocalDateTime.now()): Boolean {
         return now.isAfter(expiresAt)
+    }
+
+    fun markAsUsed() {
+        this.used = true
     }
 }

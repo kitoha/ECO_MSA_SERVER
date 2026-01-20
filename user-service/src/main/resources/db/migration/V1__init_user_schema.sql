@@ -16,9 +16,11 @@ CREATE TABLE refresh_tokens (
     issued_at TIMESTAMP NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     rotation_group VARCHAR(255) NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_refresh_token_value ON refresh_tokens(token_value);
 CREATE INDEX idx_refresh_token_user_id ON refresh_tokens(user_id);
+CREATE INDEX idx_refresh_token_rotation_group ON refresh_tokens(rotation_group);

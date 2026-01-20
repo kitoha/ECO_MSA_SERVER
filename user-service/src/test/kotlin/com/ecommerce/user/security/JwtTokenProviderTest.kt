@@ -4,13 +4,14 @@ import com.ecommerce.user.config.JwtProperties
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
+import java.time.Duration
 import java.util.Base64
 
 class JwtTokenProviderTest : BehaviorSpec({
 
     val secretKey = "super-secret-key-must-be-very-long-to-be-secure-enough-for-hs256"
     val encodedSecret = Base64.getEncoder().encodeToString(secretKey.toByteArray())
-    val jwtProperties = JwtProperties(secret = encodedSecret, expiration = 3600000)
+    val jwtProperties = JwtProperties(secret = encodedSecret, expiration = Duration.ofHours(1))
     
     val tokenProvider = JwtTokenProvider(jwtProperties)
 
