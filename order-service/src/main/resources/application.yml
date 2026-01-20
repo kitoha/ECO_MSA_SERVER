@@ -40,7 +40,6 @@ spring:
         spring.json.type.mapping: >-
           paymentCompleted:com.ecommerce.event.PaymentCompletedEvent,
           paymentFailed:com.ecommerce.event.PaymentFailedEvent,
-          reservationCreated:com.ecommerce.event.ReservationCreatedEvent,
           reservationFailed:com.ecommerce.event.ReservationFailedEvent
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

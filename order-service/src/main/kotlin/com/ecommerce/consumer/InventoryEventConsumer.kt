@@ -1,34 +1,18 @@
 package com.ecommerce.consumer
 
-import com.ecommerce.event.ReservationCreatedEvent
 import com.ecommerce.event.ReservationFailedEvent
+import com.ecommerce.service.OrderService
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
 
 @Component
-class InventoryEventConsumer {
+class InventoryEventConsumer(
+    private val orderService: OrderService
+) {
 
     private val logger = LoggerFactory.getLogger(InventoryEventConsumer::class.java)
-
-    @KafkaListener(
-        topics = ["reservation-created"],
-        groupId = "order-service",
-        containerFactory = "kafkaListenerContainerFactory"
-    )
-    fun handleReservationCreated(event: ReservationCreatedEvent, acknowledgment: Acknowledgment) {
-        try {
-            logger.info(
-                "Received ReservationCreatedEvent: orderId=${event.orderId}, " +
-                    "productId=${event.productId}, reservationId=${event.reservationId}"
-            )
-
-            acknowledgment.acknowledge()
-        } catch (e: Exception) {
-            logger.error("Failed to process ReservationCreatedEvent: orderId=${event.orderId}", e)
-        }
-    }
 
     @KafkaListener(
         topics = ["reservation-failed"],
@@ -42,9 +26,14 @@ class InventoryEventConsumer {
                     "productId=${event.productId}, reason=${event.reason}"
             )
 
+            val order = orderService.getOrderByOrderNumber(event.orderId)
+            orderService.cancelOrder(order.id, "재고 예약 실패: ${event.reason}")
+
             acknowledgment.acknowledge()
+            logger.info("Order cancelled due to reservation failure: ${event.orderId}")
         } catch (e: Exception) {
             logger.error("Failed to process ReservationFailedEvent: orderId=${event.orderId}", e)
+            acknowledgment.acknowledge()
         }
     }
 }

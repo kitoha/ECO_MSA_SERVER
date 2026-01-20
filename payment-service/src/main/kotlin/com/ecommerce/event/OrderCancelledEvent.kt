@@ -4,16 +4,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.annotation.JsonTypeName
 import java.time.LocalDateTime
 
-/**
- * 예약 생성 이벤트 (Inventory Service에서 발행)
- */
-@JsonTypeName("reservationCreated")
+@JsonTypeName("orderCancelled")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
-data class ReservationCreatedEvent(
-    val reservationId: Long,
-    val orderId: String,
-    val productId: String,
-    val quantity: Int,
-    val expiresAt: LocalDateTime,
+data class OrderCancelledEvent(
+    val orderId: Long,
+    val orderNumber: String,
+    val userId: String,
+    val reason: String,
     val timestamp: LocalDateTime = LocalDateTime.now()
 )
