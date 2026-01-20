@@ -180,4 +180,43 @@ class InventoryReservationService(
 
     logger.info("Cancelled reservation: id=$reservationId, orderId=${reservation.orderId}")
   }
+
+
+  /**
+   * 주문 ID로 모든 예약을 확정합니다.
+   */
+  @Transactional
+  fun confirmReservationsByOrderId(orderId: String) {
+    val reservations = inventoryReservationRepository.findActiveReservationsByOrderId(orderId)
+    
+    if (reservations.isEmpty()) {
+      logger.warn("No active reservations found for order: $orderId")
+      return
+    }
+
+    reservations.forEach { reservation ->
+      reservation.id?.let { confirmReservation(it) }
+    }
+
+    logger.info("Confirmed ${reservations.size} reservations for order: $orderId")
+  }
+
+  /**
+   * 주문 ID로 모든 예약을 취소합니다.
+   */
+  @Transactional
+  fun cancelReservationsByOrderId(orderId: String) {
+    val reservations = inventoryReservationRepository.findActiveReservationsByOrderId(orderId)
+    
+    if (reservations.isEmpty()) {
+      logger.warn("No active reservations found for order: $orderId")
+      return
+    }
+
+    reservations.forEach { reservation ->
+      reservation.id?.let { cancelReservation(it) }
+    }
+
+    logger.info("Cancelled ${reservations.size} reservations for order: $orderId")
+  }
 }

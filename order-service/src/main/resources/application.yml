@@ -37,6 +37,11 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: com.ecommerce.event
+        spring.json.type.mapping: >-
+          paymentCompleted:com.ecommerce.event.PaymentCompletedEvent,
+          paymentFailed:com.ecommerce.event.PaymentFailedEvent,
+          reservationCreated:com.ecommerce.event.ReservationCreatedEvent,
+          reservationFailed:com.ecommerce.event.ReservationFailedEvent
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
