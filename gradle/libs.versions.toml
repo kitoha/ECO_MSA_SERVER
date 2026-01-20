@@ -10,6 +10,7 @@ kotest = "5.9.1"
 mockk = "1.13.12"
 testcontainers = "1.20.4"
 shedlock = "5.16.0"
+jjwt = "0.12.5"
 
 [libraries]
 # Spring Boot
@@ -38,6 +39,9 @@ jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-
 # JUnit
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
+# Reactor Test
+reactor-test = { module = "io.projectreactor:reactor-test" }
+
 # Kotest
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
@@ -62,6 +66,11 @@ spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boo
 # ShedLock
 shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.ref = "shedlock" }
 shedlock-provider-redis-spring = { module = "net.javacrumbs.shedlock:shedlock-provider-redis-spring", version.ref = "shedlock" }
+
+# JJWT
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
 
 # Spring Cloud
 spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "springCloud" }

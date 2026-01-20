@@ -19,25 +19,30 @@ spring:
           predicates:
             - Path=/api/v1/inventory/**
 
-        # Order Service 라우팅 (경로 재작성)
+        # Order Service 라우팅
         - id: order-service
           uri: lb://order-service
           predicates:
             - Path=/api/v1/orders/**
           filters:
             - RewritePath=/api/v1/orders/(?<segment>.*), /api/orders/$\{segment}
+            - AuthorizationHeaderFilter
 
-        # Cart Service 라우팅 (준비 중)
+        # Cart Service 라우팅
         - id: cart-service
           uri: lb://cart-service
           predicates:
             - Path=/api/v1/carts/**
+          filters:
+            - AuthorizationHeaderFilter
 
-        # Payment Service 라우팅 (준비 중)
+        # Payment Service 라우팅
         - id: payment-service
           uri: lb://payment-service
           predicates:
             - Path=/api/v1/payments/**
+          filters:
+            - AuthorizationHeaderFilter
 
       # 전역 필터 설정
       default-filters:
