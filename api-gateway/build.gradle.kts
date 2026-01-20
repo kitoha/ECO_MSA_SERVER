@@ -23,7 +23,12 @@ dependencies {
     implementation(libs.spring.cloud.starter.netflix.eureka.client)
     implementation(libs.kotlin.reflect)
 
+    implementation(libs.jjwt.api)
+    runtimeOnly(libs.jjwt.impl)
+    runtimeOnly(libs.jjwt.jackson)
+
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.reactor.test)
     testImplementation(libs.kotlin.test.junit5)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.kotlin.test)
