@@ -38,7 +38,11 @@ spring:
         spring.json.type.mapping: >-
           reservationCreated:com.ecommerce.inventory.event.ReservationCreatedEvent,
           reservationCancelled:com.ecommerce.inventory.event.ReservationCancelledEvent,
-          reservationConfirmed:com.ecommerce.inventory.event.ReservationConfirmedEvent
+          reservationConfirmed:com.ecommerce.inventory.event.ReservationConfirmedEvent,
+          reservationFailed:com.ecommerce.inventory.event.ReservationFailedEvent,
+          inventoryReservationRequest:com.ecommerce.inventory.event.InventoryReservationRequest,
+          orderCancelled:com.ecommerce.inventory.event.OrderCancelledEvent,
+          orderConfirmed:com.ecommerce.inventory.event.OrderConfirmedEvent
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

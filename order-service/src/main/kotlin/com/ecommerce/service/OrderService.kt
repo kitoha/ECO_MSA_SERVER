@@ -130,6 +130,30 @@ class OrderService(
         )
     }
 
+
+    @Transactional(readOnly = true)
+    fun getOrderByOrderNumber(orderNumber: String): OrderResponse {
+        val order = orderRepository.findByOrderNumber(orderNumber)
+            ?: throw IllegalArgumentException("존재하지 않는 주문입니다: $orderNumber")
+
+        val orderItems = orderItemService.getOrderItems(order.id)
+
+        return OrderResponse(
+            id = order.id,
+            orderNumber = order.orderNumber,
+            userId = order.userId,
+            status = order.status,
+            items = orderItems.map { OrderItemResponse.from(it) },
+            totalAmount = order.totalAmount,
+            shippingAddress = order.shippingAddress,
+            shippingName = order.shippingName,
+            shippingPhone = order.shippingPhone,
+            orderedAt = order.orderedAt,
+            createdAt = order.createdAt,
+            updatedAt = order.updatedAt
+        )
+    }
+
     @Transactional(readOnly = true)
     fun getOrdersByUser(userId: String): List<OrderResponse> {
         val orders = orderRepository.findByUserId(userId)

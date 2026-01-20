@@ -39,3 +39,16 @@ data class ReservationConfirmedEvent(
     val orderId: String,
     val timestamp: LocalDateTime = LocalDateTime.now()
 )
+
+/**
+ * 예약 실패 이벤트
+ */
+@JsonTypeName("reservationFailed")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
+data class ReservationFailedEvent(
+    val orderId: String,
+    val productId: String,
+    val quantity: Int,
+    val reason: String,
+    val timestamp: LocalDateTime = LocalDateTime.now()
+)

@@ -14,6 +14,7 @@
 <!-- 테스트를 어떻게 진행했는지 적어주세요. 유닛 테스트, 통합 테스트 결과 등을 포함합니다. -->
 - [ ] Unit Tests
 - [ ] UI/Manual Testing
+- [ ] Integration Tests
 
 ## Related Links (관련 링크)
 <!-- Issue 티켓 번호나 관련 문서 링크를 첨부하세요. -->
