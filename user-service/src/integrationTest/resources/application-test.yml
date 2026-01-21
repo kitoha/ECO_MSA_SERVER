@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: user-service-test
+  
+  datasource:
+    url: jdbc:tc:postgresql:15:///user_db
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  
+  flyway:
+    enabled: false
+
+jwt:
+  secret: "c3VwZXItc2VjcmV0LWtleS1tdXN0LWJlLXZlcnktbG9uZy10by1iZS1zZWN1cmUtZW5vdWdoLWZvci1oczI1Ng=="
+  expiration: 1h
+
+auth:
+  refresh-token:
+    expiration: 14d
+    cookie-name: refresh_token
+
+eureka:
+  client:
+    enabled: false

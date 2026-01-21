@@ -1,6 +1,7 @@
 package com.ecommerce.gateway.filter
 
 import com.ecommerce.gateway.util.JwtUtils
+import org.slf4j.LoggerFactory
 import org.springframework.cloud.gateway.filter.GatewayFilter
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory
 import org.springframework.http.HttpHeaders
@@ -13,6 +14,8 @@ import reactor.core.publisher.Mono
 class AuthorizationHeaderFilter(
     private val jwtUtils: JwtUtils
 ) : AbstractGatewayFilterFactory<AuthorizationHeaderFilter.Config>(Config::class.java) {
+
+    private val logger = LoggerFactory.getLogger(AuthorizationHeaderFilter::class.java)
 
     class Config
 
@@ -42,6 +45,7 @@ class AuthorizationHeaderFilter(
     }
 
     private fun onError(exchange: ServerWebExchange, err: String, httpStatus: HttpStatus): Mono<Void> {
+        logger.error("Authorization error: $err")
         val response = exchange.response
         response.statusCode = httpStatus
         return response.setComplete()
