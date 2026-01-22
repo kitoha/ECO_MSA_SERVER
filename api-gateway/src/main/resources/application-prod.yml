@@ -1,3 +1,4 @@
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:3600000} # 1 hour
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:1h}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:24h}

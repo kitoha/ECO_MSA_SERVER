@@ -11,11 +11,12 @@ spring:
 
 jwt:
   secret: "super-secret-key-must-be-very-long-to-be-secure-enough-for-hs256"
-  expiration: 1h
+  access-token-expiration: 1h
+  refresh-token-expiration: 14d
 
 auth:
   refresh-token:
-    expiration: 14d
+    expiration: ${jwt.refresh-token-expiration}
     cookie-name: refresh_token
 
 logging:

@@ -4,15 +4,19 @@ import com.ecommerce.gateway.config.JwtProperties
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
+import java.time.Duration
 import java.util.Base64
-import java.util.Date
 
 class JwtUtilsTest : BehaviorSpec({
 
-    val secretKeyString = Base64.getEncoder().encodeToString("super-secret-key-must-be-very-long-to-be-secure-enough-for-hs256".toByteArray())
-    val jwtProperties = JwtProperties(secret = secretKeyString, expiration = 3600000) // 1 hour
+    val secretKeyString = "secret-key-for-test-secret-key-for-test"
+    val encodedSecret = Base64.getEncoder().encodeToString(secretKeyString.toByteArray())
+    
+    val jwtProperties = JwtProperties(
+        secret = encodedSecret,
+        accessTokenExpiration = Duration.ofHours(1),
+        refreshTokenExpiration = Duration.ofHours(24)
+    )
     val jwtUtils = JwtUtils(jwtProperties)
 
     Given("JwtUtils가 초기화되었을 때") {

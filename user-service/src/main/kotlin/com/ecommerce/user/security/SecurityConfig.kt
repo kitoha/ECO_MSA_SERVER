@@ -22,7 +22,7 @@ class SecurityConfig(
             .httpBasic { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.requestMatchers("/auth/**", "/login/**", "/oauth2/**").permitAll()
+                it.requestMatchers("/auth/**", "/login/**", "/oauth2/**", "/actuator/**").permitAll()
                 it.anyRequest().authenticated()
             }
             .oauth2Login {

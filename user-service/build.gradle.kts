@@ -61,6 +61,10 @@ dependencies {
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
+
+    // Monitoring
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.micrometer.registry.prometheus)
 }
 
 dependencyManagement {

@@ -16,11 +16,12 @@ spring:
 
 jwt:
   secret: "c3VwZXItc2VjcmV0LWtleS1tdXN0LWJlLXZlcnktbG9uZy10by1iZS1zZWN1cmUtZW5vdWdoLWZvci1oczI1Ng=="
-  expiration: 1h
+  access-token-expiration: 1h
+  refresh-token-expiration: 14d
 
 auth:
   refresh-token:
-    expiration: 14d
+    expiration: ${jwt.refresh-token-expiration}
     cookie-name: refresh_token
 
 eureka:
