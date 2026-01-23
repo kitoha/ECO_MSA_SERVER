@@ -47,8 +47,10 @@ class CartControllerTest : BehaviorSpec({
 
     given("CartController의 addItemToCart 엔드포인트가 주어졌을 때") {
         val userId = 100L
+        val productIdLong = 10L
+        val productIdString = TsidGenerator.encode(productIdLong)
         val request = AddItemRequest(
-            productId = 10L,
+            productId = productIdString,
             quantity = 2
         )
 
@@ -59,13 +61,13 @@ class CartControllerTest : BehaviorSpec({
 
         `when`("장바구니에 상품을 추가하면") {
             cart.addItem(
-                productId = request.productId,
+                productId = productIdLong,
                 productName = "테스트 상품",
                 price = BigDecimal("10000"),
                 quantity = request.quantity
             )
 
-            every { cartService.addItemToCart(userId, request.productId, request.quantity) } returns cart
+            every { cartService.addItemToCart(userId, productIdString, request.quantity) } returns cart
 
             then("상품이 추가되고 200 OK 응답을 반환해야 한다") {
                 val response = cartController.addItemToCart(userId, request)
@@ -74,11 +76,11 @@ class CartControllerTest : BehaviorSpec({
                 response.body?.userId shouldBe userId
                 response.body?.items?.shouldHaveSize(1)
                 response.body?.items?.get(0)?.let { item ->
-                    TsidGenerator.decode(item.productId) shouldBe request.productId
+                    item.productId shouldBe productIdString
                     item.quantity shouldBe request.quantity
                 }
 
-                verify(exactly = 1) { cartService.addItemToCart(userId, request.productId, request.quantity) }
+                verify(exactly = 1) { cartService.addItemToCart(userId, productIdString, request.quantity) }
             }
         }
     }

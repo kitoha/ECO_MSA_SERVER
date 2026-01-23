@@ -12,7 +12,7 @@ spring:
         - id: product-service
           uri: lb://product-service
           predicates:
-            - Path=/api/v1/products/**
+            - Path=/api/v1/products/**, /api/v1/categories/**
 
         # Inventory Service 라우팅
         - id: inventory-service
