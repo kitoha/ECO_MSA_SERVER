@@ -1,5 +1,6 @@
 server:
   port: 8080
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -44,6 +45,12 @@ spring:
           filters:
             - AuthorizationHeaderFilter
 
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**, /oauth2/**, /login/**
+
+
       # 전역 필터 설정
       default-filters:
         - name: Retry
@@ -71,3 +78,6 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     reactor.netty: INFO
+
+allowed:
+  origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}

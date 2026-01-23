@@ -1,5 +1,6 @@
 server:
   port: 8081
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -19,7 +20,8 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID:dummy-client-id}
             client-secret: ${GOOGLE_CLIENT_SECRET:dummy-client-secret}
             scope: profile, email
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            # 환경별로 달라지는 도메인은 변수로 처리
+            redirect-uri: "${GATEWAY_BASE_URL}/login/oauth2/code/google"
 
 jwt:
   access-token-expiration: 1h
@@ -33,3 +35,6 @@ auth:
 management:
   security:
     enabled: false
+
+app:
+  frontend-url: ${FRONTEND_URL}

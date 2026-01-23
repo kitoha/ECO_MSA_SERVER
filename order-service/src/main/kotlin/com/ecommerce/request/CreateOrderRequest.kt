@@ -9,9 +9,6 @@ import jakarta.validation.constraints.Size
  * 주문 생성 요청 DTO
  */
 data class CreateOrderRequest(
-  @field:NotBlank(message = "사용자 ID는 필수입니다")
-  val userId: String,
-
   @field:NotEmpty(message = "주문 항목은 최소 1개 이상이어야 합니다")
   @field:Valid
   val items: List<OrderItemRequest>,

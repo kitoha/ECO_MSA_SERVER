@@ -1,5 +1,6 @@
 package com.ecommerce.gateway.filter
 
+import com.ecommerce.gateway.security.AuthConstants
 import com.ecommerce.gateway.util.JwtUtils
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.gateway.filter.GatewayFilter
@@ -28,7 +29,7 @@ class AuthorizationHeaderFilter(
             }
 
             val authorizationHeader = request.headers.getOrEmpty(HttpHeaders.AUTHORIZATION)[0]
-            val token = authorizationHeader.replace("Bearer ", "")
+            val token = authorizationHeader.replace(AuthConstants.BEARER_PREFIX, "")
 
             if (!jwtUtils.validateToken(token)) {
                 return@GatewayFilter onError(exchange, "JWT token is not valid", HttpStatus.UNAUTHORIZED)
@@ -37,7 +38,7 @@ class AuthorizationHeaderFilter(
             val userId = jwtUtils.getUserId(token)
 
             val modifiedRequest = exchange.request.mutate()
-                .header("X-User-Id", userId)
+                .header(AuthConstants.USER_ID_HEADER, userId)
                 .build()
 
             chain.filter(exchange.mutate().request(modifiedRequest).build())

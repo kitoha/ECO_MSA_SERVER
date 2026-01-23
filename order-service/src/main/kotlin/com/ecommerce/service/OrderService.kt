@@ -36,15 +36,15 @@ class OrderService(
     private val logger = LoggerFactory.getLogger(OrderService::class.java)
 
     @Transactional
-    fun createOrder(request: CreateOrderRequest): OrderResponse {
-        logger.info("Creating order for user: ${request.userId}")
+    fun createOrder(request: CreateOrderRequest, userId: String): OrderResponse {
+        logger.info("Creating order for user: $userId")
 
         val totalAmount = orderItemService.calculateOrderTotal(request.items)
 
         val order = Order(
             id = idGenerator.generate(),
             orderNumber = orderNumberGenerator.generate(),
-            userId = request.userId,
+            userId = userId,
             totalAmount = totalAmount,
             shippingAddress = request.shippingAddress,
             shippingName = request.shippingName,

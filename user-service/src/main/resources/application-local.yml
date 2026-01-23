@@ -22,3 +22,6 @@ auth:
 logging:
   level:
     com.ecommerce.user: DEBUG
+
+GATEWAY_BASE_URL: http://localhost:8080
+FRONTEND_URL: http://localhost:3001

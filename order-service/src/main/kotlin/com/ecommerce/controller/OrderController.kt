@@ -1,5 +1,6 @@
 package com.ecommerce.controller
 
+import com.ecommerce.order.security.AuthConstants
 import com.ecommerce.request.CreateOrderRequest
 import com.ecommerce.response.OrderResponse
 import com.ecommerce.service.OrderService
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -16,8 +18,11 @@ class OrderController(
   private val orderService: OrderService
 ) {
   @PostMapping
-  fun createOrder(@RequestBody request: CreateOrderRequest): OrderResponse {
-    return orderService.createOrder(request)
+  fun createOrder(
+    @RequestHeader(AuthConstants.USER_ID_HEADER) userId: String,
+    @RequestBody request: CreateOrderRequest
+  ): OrderResponse {
+    return orderService.createOrder(request, userId)
   }
 
   @GetMapping("/{orderId}")
@@ -25,8 +30,8 @@ class OrderController(
     return orderService.getOrder(orderId)
   }
 
-  @GetMapping("/user/{userId}")
-  fun getOrdersByUser(@PathVariable userId: String): List<OrderResponse> {
+  @GetMapping("/my")
+  fun getOrdersByUser(@RequestHeader(AuthConstants.USER_ID_HEADER) userId: String): List<OrderResponse> {
     return orderService.getOrdersByUser(userId)
   }
 
