@@ -25,33 +25,34 @@ class ProductService(
   }
 
   @Transactional
-  fun registerProduct(request: RegisterProductRequest): ProductResponse {
-    val category = categoryRepository.findByIdAndNotDeleted(request.categoryId)
-      ?: throw IllegalArgumentException("존재하지 않는 카테고리입니다: ${request.categoryId}")
+  fun registerProducts(requests: List<RegisterProductRequest>): List<ProductResponse> {
+    return requests.map { request ->
+      val category = categoryRepository.findByIdAndNotDeleted(request.categoryId)
+        ?: throw IllegalArgumentException("존재하지 않는 카테고리입니다: ${request.categoryId}")
 
-    val product = Product(
-      id = idGenerator.generate(),
-      name = request.name,
-      description = request.description,
-      category = category,
-      originalPrice = request.originalPrice,
-      salePrice = request.salePrice,
-      status = request.status
-    )
-
-    request.images.forEach { imageData ->
-      val productImage = ProductImage(
-        product = product,
-        imageUrl = imageData.imageUrl,
-        displayOrder = imageData.displayOrder,
-        isThumbnail = imageData.isThumbnail
+      val product = Product(
+        id = idGenerator.generate(),
+        name = request.name,
+        description = request.description,
+        category = category,
+        originalPrice = request.originalPrice,
+        salePrice = request.salePrice,
+        status = request.status
       )
-      product.addImage(productImage)
+
+      request.images.forEach { imageData ->
+        val productImage = ProductImage(
+          product = product,
+          imageUrl = imageData.imageUrl,
+          displayOrder = imageData.displayOrder,
+          isThumbnail = imageData.isThumbnail
+        )
+        product.addImage(productImage)
+      }
+
+      val savedProduct = productRepository.save(product)
+      ProductResponse.from(savedProduct, idGenerator)
     }
-
-    val savedProduct = productRepository.save(product)
-
-    return ProductResponse.from(savedProduct, idGenerator)
   }
 
   @Transactional(readOnly = true)
