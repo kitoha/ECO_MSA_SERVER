@@ -23,16 +23,21 @@ class AuthorizationHeaderFilter(
     override fun apply(config: Config): GatewayFilter {
         return GatewayFilter { exchange, chain ->
             val request = exchange.request
+            var token: String? = null
 
-            if (!request.headers.containsKey(HttpHeaders.AUTHORIZATION)) {
-                return@GatewayFilter onError(exchange, "No authorization header", HttpStatus.UNAUTHORIZED)
+            if (request.headers.containsKey(HttpHeaders.AUTHORIZATION)) {
+                val authorizationHeader = request.headers.getFirst(HttpHeaders.AUTHORIZATION)
+                if (authorizationHeader != null && authorizationHeader.startsWith(AuthConstants.BEARER_PREFIX)) {
+                    token = authorizationHeader.replace(AuthConstants.BEARER_PREFIX, "")
+                }
             }
 
-            val authorizationHeader = request.headers.getOrEmpty(HttpHeaders.AUTHORIZATION)[0]
-            val token = authorizationHeader.replace(AuthConstants.BEARER_PREFIX, "")
+            if (token == null && request.cookies.containsKey(AuthConstants.ACCESS_TOKEN_COOKIE_NAME)) {
+                token = request.cookies.getFirst(AuthConstants.ACCESS_TOKEN_COOKIE_NAME)?.value
+            }
 
-            if (!jwtUtils.validateToken(token)) {
-                return@GatewayFilter onError(exchange, "JWT token is not valid", HttpStatus.UNAUTHORIZED)
+            if (token == null || !jwtUtils.validateToken(token)) {
+                return@GatewayFilter onError(exchange, "No valid token found in Header or Cookie", HttpStatus.UNAUTHORIZED)
             }
 
             val userId = jwtUtils.getUserId(token)

@@ -8,8 +8,6 @@ networks:
 volumes:
   postgres_data:
     driver: local
-  redis_data:
-    driver: local
   kafka_data:
     driver: local
   prometheus_data:
@@ -147,8 +145,6 @@ services:
       - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=prometheus,health,info
       - MANAGEMENT_ENDPOINT_HEALTH_SHOWDETAILS=always
       - MANAGEMENT_METRICS_TAGS_APPLICATION=${SPRING_APPLICATION_NAME}
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       # JWT Configuration from .env
       - JWT_SECRET=${JWT_SECRET}
@@ -247,8 +243,6 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       - SERVER_PORT=8080
       - SPRING_PROFILES_ACTIVE=docker
@@ -263,8 +257,6 @@ services:
       - SPRING_FLYWAY_ENABLED=true
       - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
       interval: 10s
@@ -317,8 +309,6 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       - SERVER_PORT=8080
       - SPRING_PROFILES_ACTIVE=docker
@@ -332,7 +322,6 @@ services:
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_FLYWAY_ENABLED=true
       - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
-      - SPRING_DATA_REDIS_HOST=redis
     networks:
       - eco-msa-network
     healthcheck:
