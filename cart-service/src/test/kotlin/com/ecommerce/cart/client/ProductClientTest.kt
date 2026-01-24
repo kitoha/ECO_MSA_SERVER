@@ -5,6 +5,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
+import org.springframework.http.HttpHeaders
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
@@ -72,8 +73,8 @@ class ProductClientTest : BehaviorSpec({
             val notFoundException = WebClientResponseException.NotFound.create(
                 404,
                 "Not Found",
-                null,
-                null,
+                org.springframework.http.HttpHeaders(),
+                ByteArray(0),
                 null
             )
 
@@ -165,8 +166,8 @@ class ProductClientTest : BehaviorSpec({
             val notFoundException = WebClientResponseException.NotFound.create(
                 404,
                 "Not Found",
-                null,
-                null,
+                HttpHeaders(),
+                ByteArray(0),
                 null
             )
 
