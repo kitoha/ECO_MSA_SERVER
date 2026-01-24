@@ -64,9 +64,15 @@ class OAuth2LoginTest(
         When("OAuth2 로그인이 성공하면") {
             oAuth2SuccessHandler.onAuthenticationSuccess(request, response, authentication)
 
-            Then("리다이렉트 URL에 accessToken이 포함되어야 한다") {
+            Then("리다이렉트 URL이 올바르게 설정되어야 한다") {
                 response.redirectedUrl.shouldNotBeNull()
-                response.redirectedUrl!! shouldContain "accessToken"
+                response.redirectedUrl!! shouldContain "/oauth2/redirect"
+            }
+
+            Then("accessToken 쿠키가 생성되어야 한다") {
+                val accessTokenCookie = response.cookies.find { it.name == "accessToken" }
+                accessTokenCookie.shouldNotBeNull()
+                accessTokenCookie.isHttpOnly shouldBe true
             }
 
             Then("refresh_token 쿠키가 생성되어야 한다") {
