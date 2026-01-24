@@ -7,7 +7,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
+import org.springframework.http.HttpHeaders
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.util.UriBuilder
@@ -70,7 +70,7 @@ class ProductClientTest : BehaviorSpec({
             every { requestHeadersUriSpec.uri("/api/v1/products/{id}", "INVALID") } returns requestHeadersSpec
             every { requestHeadersSpec.retrieve() } returns responseSpec
             every { responseSpec.bodyToMono(ProductResponse::class.java) } returns Mono.error(
-                WebClientResponseException.NotFound.create(404, "Not Found", null, null, null)
+                WebClientResponseException.NotFound.create(404, "Not Found", HttpHeaders(), ByteArray(0), null)
             )
 
             then("null을 반환해야 한다") {
