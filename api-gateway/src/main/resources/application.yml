@@ -26,7 +26,6 @@ spring:
           predicates:
             - Path=/api/v1/orders/**
           filters:
-            - RewritePath=/api/v1/orders/(?<segment>.*), /api/orders/$\{segment}
             - AuthorizationHeaderFilter
 
         # Cart Service 라우팅
