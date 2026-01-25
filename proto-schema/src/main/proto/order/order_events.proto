@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package com.ecommerce.order;
+
+option java_multiple_files = true;
+option java_package = "com.ecommerce.proto.order";
+option java_outer_classname = "OrderEventsProto";
+
+import "common/common.proto";
+import "google/protobuf/timestamp.proto";
+
+message OrderItem {
+  string product_id = 1;
+  string product_name = 2;
+  com.ecommerce.common.Money price = 3;
+  int32 quantity = 4;
+}
+
+message OrderCreatedEvent {
+  int64 order_id = 1;
+  string order_number = 2;
+  string user_id = 3;
+  repeated OrderItem items = 4;
+  com.ecommerce.common.Money total_amount = 5;
+  string shipping_address = 6;
+  string shipping_name = 7;
+  string shipping_phone = 8;
+  google.protobuf.Timestamp timestamp = 9;
+  com.ecommerce.common.Metadata metadata = 10;
+}
+
+message OrderConfirmedEvent {
+  int64 order_id = 1;
+  string order_number = 2;
+  string user_id = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  com.ecommerce.common.Metadata metadata = 5;
+}
+
+message OrderCancelledEvent {
+  int64 order_id = 1;
+  string order_number = 2;
+  string user_id = 3;
+  string reason = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  com.ecommerce.common.Metadata metadata = 6;
+}
+
+message OrderCompletedEvent {
+  int64 order_id = 1;
+  string order_number = 2;
+  string user_id = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  com.ecommerce.common.Metadata metadata = 5;
+}
