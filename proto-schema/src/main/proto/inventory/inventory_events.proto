@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package com.ecommerce.inventory;
+
+option java_multiple_files = true;
+option java_package = "com.ecommerce.proto.inventory";
+option java_outer_classname = "InventoryEventsProto";
+
+import "common/common.proto";
+import "google/protobuf/timestamp.proto";
+
+message InventoryReservationRequest {
+  string order_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  com.ecommerce.common.Metadata metadata = 5;
+}
+
+message ReservationCreatedEvent {
+  int64 reservation_id = 1;
+  string order_id = 2;
+  string product_id = 3;
+  int32 quantity = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  com.ecommerce.common.Metadata metadata = 7;
+}
+
+message ReservationConfirmedEvent {
+  int64 reservation_id = 1;
+  string order_id = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  com.ecommerce.common.Metadata metadata = 4;
+}
+
+message ReservationCancelledEvent {
+  int64 reservation_id = 1;
+  string reason = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  com.ecommerce.common.Metadata metadata = 4;
+}
+
+message ReservationFailedEvent {
+  string order_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+  string reason = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  com.ecommerce.common.Metadata metadata = 6;
+}
