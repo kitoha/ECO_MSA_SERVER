@@ -31,7 +31,6 @@ protobuf {
         artifact = "com.google.protobuf:protoc:3.25.1"
     }
 
-    // Kotlin DSL 생성
     generateProtoTasks {
         all().forEach { task ->
             task.builtins {
@@ -41,7 +40,6 @@ protobuf {
     }
 }
 
-// 생성된 파일 위치 설정
 sourceSets {
     main {
         proto {
@@ -50,11 +48,10 @@ sourceSets {
     }
 }
 
-tasks.withType<Test> {
-    useJUnitPlatform()
+tasks.withType<ProcessResources> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
-// Proto 파일이 없어도 빌드 성공하도록 (첫 커밋용)
-tasks.named("generateProto") {
-    enabled = false
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
