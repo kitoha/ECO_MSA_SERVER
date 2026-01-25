@@ -16,6 +16,9 @@ dependencies {
     api("com.google.protobuf:protobuf-kotlin:3.25.1")
     api("com.google.protobuf:protobuf-java-util:3.25.1")
 
+    // Kafka
+    api("org.apache.kafka:kafka-clients:3.6.1")
+
     // Kotlin
     implementation(libs.kotlin.reflect)
 
