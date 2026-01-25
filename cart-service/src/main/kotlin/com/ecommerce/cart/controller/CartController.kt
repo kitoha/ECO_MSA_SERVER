@@ -4,6 +4,7 @@ import com.ecommerce.cart.dto.AddItemRequest
 import com.ecommerce.cart.dto.CartResponse
 import com.ecommerce.cart.dto.UpdateQuantityRequest
 import com.ecommerce.cart.service.CartService
+import com.ecommerce.cart.security.AuthConstants
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -16,8 +17,10 @@ class CartController(
     /**
      * 장바구니 조회
      */
-    @GetMapping("/{userId}")
-    fun getCart(@PathVariable userId: Long): ResponseEntity<CartResponse> {
+    @GetMapping
+    fun getCart(
+        @RequestHeader(AuthConstants.USER_ID_HEADER) userId: Long
+    ): ResponseEntity<CartResponse> {
         val cart = cartService.getOrCreateCart(userId)
         return ResponseEntity.ok(CartResponse.from(cart))
     }
@@ -25,9 +28,9 @@ class CartController(
     /**
      * 장바구니에 상품 추가
      */
-    @PostMapping("/{userId}/items")
+    @PostMapping("/items")
     fun addItemToCart(
-        @PathVariable userId: Long,
+        @RequestHeader(AuthConstants.USER_ID_HEADER) userId: Long,
         @RequestBody request: AddItemRequest
     ): ResponseEntity<CartResponse> {
         val cart = cartService.addItemToCart(userId, request.productId, request.quantity)
@@ -37,9 +40,9 @@ class CartController(
     /**
      * 장바구니 아이템 수량 변경
      */
-    @PutMapping("/{userId}/items/{itemId}")
+    @PutMapping("/items/{itemId}")
     fun updateItemQuantity(
-        @PathVariable userId: Long,
+        @RequestHeader(AuthConstants.USER_ID_HEADER) userId: Long,
         @PathVariable itemId: Long,
         @RequestBody request: UpdateQuantityRequest
     ): ResponseEntity<CartResponse> {
@@ -50,9 +53,9 @@ class CartController(
     /**
      * 장바구니 아이템 삭제
      */
-    @DeleteMapping("/{userId}/items/{itemId}")
+    @DeleteMapping("/items/{itemId}")
     fun removeItemFromCart(
-        @PathVariable userId: Long,
+        @RequestHeader(AuthConstants.USER_ID_HEADER) userId: Long,
         @PathVariable itemId: Long
     ): ResponseEntity<CartResponse> {
         val cart = cartService.removeItemFromCart(userId, itemId)
@@ -62,8 +65,10 @@ class CartController(
     /**
      * 장바구니 비우기
      */
-    @DeleteMapping("/{userId}")
-    fun clearCart(@PathVariable userId: Long): ResponseEntity<CartResponse> {
+    @DeleteMapping
+    fun clearCart(
+        @RequestHeader(AuthConstants.USER_ID_HEADER) userId: Long
+    ): ResponseEntity<CartResponse> {
         val cart = cartService.clearCart(userId)
         return ResponseEntity.ok(CartResponse.from(cart))
     }

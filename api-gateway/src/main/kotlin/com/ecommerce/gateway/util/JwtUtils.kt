@@ -22,7 +22,7 @@ class JwtUtils(
 
     fun generateToken(userId: String): String {
         val now = Date()
-        val expiryDate = Date(now.time + jwtProperties.expiration)
+        val expiryDate = Date(now.time + jwtProperties.accessTokenExpiration.toMillis())
 
         return Jwts.builder()
             .subject(userId)

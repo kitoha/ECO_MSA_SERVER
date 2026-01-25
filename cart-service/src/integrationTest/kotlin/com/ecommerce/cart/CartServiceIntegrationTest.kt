@@ -2,7 +2,6 @@ package com.ecommerce.cart
 
 import com.ecommerce.cart.client.ProductClient
 import com.ecommerce.cart.dto.external.ProductResponse
-import com.ecommerce.cart.entity.Cart
 import com.ecommerce.cart.exception.CartException
 import com.ecommerce.cart.generator.TsidGenerator
 import com.ecommerce.cart.repository.CartItemRepository
@@ -16,7 +15,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.every
-import io.mockk.mockk
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
@@ -44,10 +42,10 @@ class CartServiceIntegrationTest(
     extensions(SpringExtension)
 
     val userId = 100L
-    val productId = 10L
+    val productId = TsidGenerator.encode(10L)
 
     val mockProduct = ProductResponse(
-        id = "encoded-product-id",
+        id = productId,
         name = "테스트 상품",
         description = "테스트 설명",
         categoryId = 1L,
@@ -101,7 +99,7 @@ class CartServiceIntegrationTest(
                 val cart = cartService.addItemToCart(userId, productId, 2)
 
                 cart.getActiveItems() shouldHaveSize 1
-                cart.getActiveItems()[0].productId shouldBe productId
+                cart.getActiveItems()[0].productId shouldBe TsidGenerator.decode(productId)
                 cart.getActiveItems()[0].quantity shouldBe 2
                 cart.getTotalPrice() shouldBe BigDecimal("20000")
 
@@ -130,7 +128,7 @@ class CartServiceIntegrationTest(
                 val exception = shouldThrow<CartException.ProductNotAvailableException> {
                     cartService.addItemToCart(userId, productId, 2)
                 }
-                exception.message shouldBe "상품을 사용할 수 없습니다. productId=$productId"
+                exception.message shouldBe "상품을 사용할 수 없습니다. productId=${TsidGenerator.decode(productId)}"
             }
         }
     }
@@ -187,8 +185,8 @@ class CartServiceIntegrationTest(
             every { productClient.getProductById(any()) } returns mockProduct
 
             then("모든 아이템이 삭제되어야 한다") {
-                cartService.addItemToCart(userId, 10L, 1)
-                cartService.addItemToCart(userId, 20L, 2)
+                cartService.addItemToCart(userId, TsidGenerator.encode(10L), 1)
+                cartService.addItemToCart(userId, TsidGenerator.encode(20L), 2)
 
                 val clearedCart = cartService.clearCart(userId)
 

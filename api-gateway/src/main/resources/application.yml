@@ -1,5 +1,6 @@
 server:
   port: 8080
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -11,7 +12,7 @@ spring:
         - id: product-service
           uri: lb://product-service
           predicates:
-            - Path=/api/v1/products/**
+            - Path=/api/v1/products/**, /api/v1/categories/**
 
         # Inventory Service 라우팅
         - id: inventory-service
@@ -25,7 +26,6 @@ spring:
           predicates:
             - Path=/api/v1/orders/**
           filters:
-            - RewritePath=/api/v1/orders/(?<segment>.*), /api/orders/$\{segment}
             - AuthorizationHeaderFilter
 
         # Cart Service 라우팅
@@ -43,6 +43,12 @@ spring:
             - Path=/api/v1/payments/**
           filters:
             - AuthorizationHeaderFilter
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**, /api/v1/auth/**, /oauth2/**, /login/**
+
 
       # 전역 필터 설정
       default-filters:
@@ -71,3 +77,6 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     reactor.netty: INFO
+
+allowed:
+  origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}

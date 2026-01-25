@@ -31,7 +31,7 @@ class ProductServiceTest : BehaviorSpec({
         clearMocks(productRepository, categoryRepository ,idGenerator, answers = false)
     }
 
-    given("ProductService의 registerProduct 메서드가 주어졌을 때") {
+    given("ProductService의 registerProducts 메서드가 주어졌을 때") {
         val category = Category(
             id = 1L,
             name = "전자제품",
@@ -55,7 +55,9 @@ class ProductServiceTest : BehaviorSpec({
             )
         )
 
-        `when`("유효한 요청으로 상품을 등록하면") {
+        val requests = listOf(request)
+
+        `when`("유효한 요청으로 상품들을 등록하면") {
             val productId = 236372517419679744L
             val productIdString = "0C6JNH3N3B8G0"
             val savedProduct = Product(
@@ -73,13 +75,14 @@ class ProductServiceTest : BehaviorSpec({
             every { categoryRepository.findByIdAndNotDeleted(1L) } returns category
             every { productRepository.save(any()) } returns savedProduct
 
-            then("상품이 정상적으로 등록되어야 한다") {
-                val response = productService.registerProduct(request)
+            then("상품들이 정상적으로 등록되어야 한다") {
+                val response = productService.registerProducts(requests)
 
-                response.name shouldBe "노트북"
-                response.originalPrice shouldBe BigDecimal("1000000")
-                response.salePrice shouldBe BigDecimal("800000")
-                response.status shouldBe ProductStatus.ACTIVE
+                response shouldHaveSize 1
+                response[0].name shouldBe "노트북"
+                response[0].originalPrice shouldBe BigDecimal("1000000")
+                response[0].salePrice shouldBe BigDecimal("800000")
+                response[0].status shouldBe ProductStatus.ACTIVE
 
                 verify(exactly = 1) { idGenerator.generate() }
                 verify(exactly = 1) { categoryRepository.findByIdAndNotDeleted(1L) }
@@ -92,9 +95,10 @@ class ProductServiceTest : BehaviorSpec({
 
             then("예외가 발생해야 한다") {
                 val invalidRequest = request.copy(categoryId = 999L)
+                val invalidRequests = listOf(invalidRequest)
 
                 val exception = shouldThrow<IllegalArgumentException> {
-                    productService.registerProduct(invalidRequest)
+                    productService.registerProducts(invalidRequests)
                 }
                 exception.message shouldBe "존재하지 않는 카테고리입니다: 999"
             }

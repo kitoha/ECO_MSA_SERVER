@@ -9,7 +9,11 @@ class JwtTokenGeneratorTest : StringSpec({
     val secretKey = "super-secret-key-must-be-very-long-to-be-secure-enough-for-hs256"
     val encodedSecret = Base64.getEncoder().encodeToString(secretKey.toByteArray())
     
-    val jwtProperties = JwtProperties(secret = encodedSecret, expiration = 86400000) // 24 hours
+    val jwtProperties = JwtProperties(
+        secret = encodedSecret,
+        accessTokenExpiration = java.time.Duration.ofHours(24),
+        refreshTokenExpiration = java.time.Duration.ofHours(24)
+    )
     val jwtUtils = JwtUtils(jwtProperties)
 
     "Generate Test Token" {

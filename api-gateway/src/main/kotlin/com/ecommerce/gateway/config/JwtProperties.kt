@@ -1,9 +1,11 @@
 package com.ecommerce.gateway.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
+import java.time.Duration
 
 @ConfigurationProperties(prefix = "jwt")
 data class JwtProperties(
     val secret: String,
-    val expiration: Long = 3600000 // 기본값 1시간
+    val accessTokenExpiration: Duration,
+    val refreshTokenExpiration: Duration
 )

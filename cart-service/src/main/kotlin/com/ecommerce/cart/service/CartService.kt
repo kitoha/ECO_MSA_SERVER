@@ -4,7 +4,6 @@ import com.ecommerce.cart.client.ProductClient
 import com.ecommerce.cart.entity.Cart
 import com.ecommerce.cart.exception.CartException
 import com.ecommerce.cart.generator.TsidGenerator
-import com.ecommerce.cart.repository.CartItemRepository
 import com.ecommerce.cart.repository.CartRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -14,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 class CartService(
     private val cartRepository: CartRepository,
-    private val cartItemRepository: CartItemRepository,
     private val productClient: ProductClient,
     private val idGenerator: TsidGenerator
 ) {
@@ -41,28 +39,28 @@ class CartService(
      * 장바구니에 상품 추가
      */
     @Transactional
-    fun addItemToCart(userId: Long, productId: Long, quantity: Int): Cart {
+    fun addItemToCart(userId: Long, productId: String, quantity: Int): Cart {
         require(quantity > 0) { "수량은 1 이상이어야 합니다" }
 
-        val productIdStr = TsidGenerator.encode(productId)
-        val product = productClient.getProductById(productIdStr)
-            ?: throw CartException.ProductNotAvailableException(productId)
+        val decodedProductId = idGenerator.decode(productId)
+        val product = productClient.getProductById(productId)
+            ?: throw CartException.ProductNotAvailableException(decodedProductId)
 
         if (product.status != "ACTIVE") {
-            throw CartException.ProductNotAvailableException(productId)
+            throw CartException.ProductNotAvailableException(decodedProductId)
         }
 
         val cart = getOrCreateCart(userId)
 
         cart.addItem(
-            productId = productId,
+            productId = decodedProductId,
             productName = product.name,
             price = product.salePrice,
             quantity = quantity
         )
 
         val savedCart = cartRepository.save(cart)
-        logger.info("Added item to cart. userId={}, productId={}, quantity={}", userId, productId, quantity)
+        logger.info("Added item to cart. userId={}, productId={}, quantity={}", userId, decodedProductId, quantity)
 
         return savedCart
     }

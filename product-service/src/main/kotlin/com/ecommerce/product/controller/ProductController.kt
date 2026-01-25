@@ -16,10 +16,10 @@ class ProductController(
 ) {
 
   @PostMapping
-  fun registerProduct(
-    @RequestBody request: RegisterProductRequest
-  ): ResponseEntity<ProductResponse> {
-    val response = productService.registerProduct(request)
+  fun registerProducts(
+    @RequestBody requests: List<RegisterProductRequest>
+  ): ResponseEntity<List<ProductResponse>> {
+    val response = productService.registerProducts(requests)
     return ResponseEntity.status(HttpStatus.CREATED).body(response)
   }
 

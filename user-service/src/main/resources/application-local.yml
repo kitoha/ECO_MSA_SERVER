@@ -10,14 +10,18 @@ spring:
     show-sql: true
 
 jwt:
-  secret: "super-secret-key-must-be-very-long-to-be-secure-enough-for-hs256"
-  expiration: 1h
+  secret: "c2VjcmV0LWtleS1mb3ItZWNvbW1lcmNlLW1zYS1wcm9qZWN0LWdlbmVyYXRlZC1ieS1haS1hc3Npc3RhbnQ="
+  access-token-expiration: 1h
+  refresh-token-expiration: 14d
 
 auth:
   refresh-token:
-    expiration: 14d
+    expiration: ${jwt.refresh-token-expiration}
     cookie-name: refresh_token
 
 logging:
   level:
     com.ecommerce.user: DEBUG
+
+GATEWAY_BASE_URL: http://localhost:8080
+FRONTEND_URL: http://localhost:3001

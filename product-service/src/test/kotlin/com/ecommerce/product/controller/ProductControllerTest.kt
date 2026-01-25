@@ -20,7 +20,7 @@ class ProductControllerTest : BehaviorSpec({
     val productService = mockk<ProductService>()
     val productController = ProductController(productService)
 
-    given("ProductController의 registerProduct 엔드포인트가 주어졌을 때") {
+    given("ProductController의 registerProducts 엔드포인트가 주어졌을 때") {
         val request = RegisterProductRequest(
             name = "노트북",
             description = "고성능 노트북",
@@ -36,6 +36,8 @@ class ProductControllerTest : BehaviorSpec({
                 )
             )
         )
+
+        val requests = listOf(request)
 
         val expectedResponse = ProductResponse(
             id = "0C6JNH3N3B8G0",
@@ -59,18 +61,20 @@ class ProductControllerTest : BehaviorSpec({
             updatedAt = LocalDateTime.now()
         )
 
-        `when`("유효한 요청으로 상품을 등록하면") {
-            every { productService.registerProduct(request) } returns expectedResponse
+        val expectedResponses = listOf(expectedResponse)
 
-            then("상품이 등록되고 201 CREATED 응답을 반환해야 한다") {
-                val response = productController.registerProduct(request)
+        `when`("유효한 요청으로 상품들을 등록하면") {
+            every { productService.registerProducts(requests) } returns expectedResponses
+
+            then("상품들이 등록되고 201 CREATED 응답을 반환해야 한다") {
+                val response = productController.registerProducts(requests)
 
                 response.statusCode shouldBe HttpStatus.CREATED
-                response.body shouldBe expectedResponse
-                response.body?.name shouldBe "노트북"
-                response.body?.originalPrice shouldBe BigDecimal("1000000")
+                response.body shouldBe expectedResponses
+                response.body?.get(0)?.name shouldBe "노트북"
+                response.body?.get(0)?.originalPrice shouldBe BigDecimal("1000000")
 
-                verify(exactly = 1) { productService.registerProduct(request) }
+                verify(exactly = 1) { productService.registerProducts(requests) }
             }
         }
     }

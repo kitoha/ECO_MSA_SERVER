@@ -1,3 +1,4 @@
 jwt:
-  secret: "super-secret-key-must-be-very-long-to-be-secure-enough-for-hs256"
-  expiration: 3600000 # 1 hour
+  secret: "c2VjcmV0LWtleS1mb3ItZWNvbW1lcmNlLW1zYS1wcm9qZWN0LWdlbmVyYXRlZC1ieS1haS1hc3Npc3RhbnQ="
+  access-token-expiration: 1h
+  refresh-token-expiration: 24h

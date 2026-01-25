@@ -6,6 +6,7 @@ plugins {
 	alias(libs.plugins.spring.boot) apply false
 	alias(libs.plugins.spring.dependency.management) apply false
 	alias(libs.plugins.sonarqube)
+	alias(libs.plugins.jib) apply false
 	jacoco
 }
 
@@ -18,6 +19,26 @@ repositories {
 
 subprojects {
 	apply(plugin = "jacoco")
+	apply(plugin = "com.google.cloud.tools.jib")
+
+	configure<com.google.cloud.tools.jib.gradle.JibExtension> {
+		from {
+			image = "eclipse-temurin:21-jre-alpine"
+			platforms {
+				platform {
+					architecture = "arm64"
+					os = "linux"
+				}
+			}
+		}
+		to {
+			image = "eco-msa/${project.name}:latest"
+		}
+		container {
+			creationTime = "USE_CURRENT_TIMESTAMP"
+			jvmFlags = listOf("-Dspring.profiles.active=docker", "-Xms512m", "-Xmx512m")
+		}
+	}
 
 	afterEvaluate {
 		if (buildFile.exists()) {

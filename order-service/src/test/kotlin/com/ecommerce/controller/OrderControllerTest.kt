@@ -31,8 +31,8 @@ class OrderControllerTest : BehaviorSpec({
     }
 
     given("OrderController의 createOrder 엔드포인트가 주어졌을 때") {
+        val userId = "user123"
         val request = CreateOrderRequest(
-            userId = "user123",
             items = listOf(
                 OrderItemRequest(
                     productId = "1",
@@ -69,10 +69,10 @@ class OrderControllerTest : BehaviorSpec({
         )
 
         `when`("POST /api/orders로 주문 생성 요청을 보내면") {
-            every { orderService.createOrder(request) } returns expectedResponse
+            every { orderService.createOrder(request, userId) } returns expectedResponse
 
             then("주문이 생성되고 응답이 반환되어야 한다") {
-                val response = orderController.createOrder(request)
+                val response = orderController.createOrder(userId, request)
 
                 response.id shouldBe 1L
                 response.orderNumber shouldBe "ORD-20250128-000001"
@@ -80,13 +80,12 @@ class OrderControllerTest : BehaviorSpec({
                 response.status shouldBe OrderStatus.PENDING
                 response.totalAmount shouldBe BigDecimal("100000")
 
-                verify(exactly = 1) { orderService.createOrder(request) }
+                verify(exactly = 1) { orderService.createOrder(request, userId) }
             }
         }
 
         `when`("여러 상품을 포함한 주문 생성 요청을 보내면") {
             val multiItemRequest = CreateOrderRequest(
-                userId = "user123",
                 items = listOf(
                     OrderItemRequest(productId = "1", quantity = 2),
                     OrderItemRequest(productId = "2", quantity = 1)
@@ -118,15 +117,15 @@ class OrderControllerTest : BehaviorSpec({
                 totalAmount = BigDecimal("130000")
             )
 
-            every { orderService.createOrder(multiItemRequest) } returns multiItemResponse
+            every { orderService.createOrder(multiItemRequest, userId) } returns multiItemResponse
 
             then("여러 상품이 포함된 주문이 생성되어야 한다") {
-                val response = orderController.createOrder(multiItemRequest)
+                val response = orderController.createOrder(userId, multiItemRequest)
 
                 response.items shouldHaveSize 2
                 response.totalAmount shouldBe BigDecimal("130000")
 
-                verify(exactly = 1) { orderService.createOrder(multiItemRequest) }
+                verify(exactly = 1) { orderService.createOrder(multiItemRequest, userId) }
             }
         }
     }

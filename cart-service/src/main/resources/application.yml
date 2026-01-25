@@ -3,7 +3,7 @@ spring:
     name: cart-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5437/cart_db
+    url: jdbc:postgresql://localhost:5434/cart_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver

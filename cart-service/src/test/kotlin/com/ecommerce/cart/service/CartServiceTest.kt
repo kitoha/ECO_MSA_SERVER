@@ -22,13 +22,12 @@ import java.util.*
 class CartServiceTest : BehaviorSpec({
 
     val cartRepository = mockk<CartRepository>()
-    val cartItemRepository = mockk<CartItemRepository>()
     val productClient = mockk<ProductClient>()
     val idGenerator = mockk<TsidGenerator>()
-    val cartService = CartService(cartRepository, cartItemRepository, productClient, idGenerator)
+    val cartService = CartService(cartRepository, productClient, idGenerator)
 
     beforeEach {
-        clearMocks(cartRepository, cartItemRepository, productClient, idGenerator, answers = false)
+        clearMocks(cartRepository, productClient, idGenerator, answers = false)
     }
 
     given("CartService의 getOrCreateCart 메서드가 주어졌을 때") {
@@ -79,7 +78,8 @@ class CartServiceTest : BehaviorSpec({
 
     given("CartService의 addItemToCart 메서드가 주어졌을 때") {
         val userId = 100L
-        val productId = 10L
+        val productIdLong = 10L
+        val productIdString = "0P8SKS9BSP5YR"
         val quantity = 2
         val cart = Cart(
             id = 1L,
@@ -87,7 +87,7 @@ class CartServiceTest : BehaviorSpec({
         )
 
         val product = ProductResponse(
-            id = "encoded-product-id",
+            id = productIdString,
             name = "테스트 상품",
             description = "테스트 설명",
             categoryId = 1L,
@@ -102,52 +102,56 @@ class CartServiceTest : BehaviorSpec({
         )
 
         `when`("유효한 상품을 장바구니에 추가하면") {
-            every { productClient.getProductById(any()) } returns product
+            every { idGenerator.decode(productIdString) } returns productIdLong
+            every { productClient.getProductById(productIdString) } returns product
             every { cartRepository.findByUserIdWithItems(userId) } returns Optional.of(cart)
             every { cartRepository.save(any()) } returns cart
 
             then("상품이 장바구니에 추가되어야 한다") {
-                val result = cartService.addItemToCart(userId, productId, quantity)
+                val result = cartService.addItemToCart(userId, productIdString, quantity)
 
                 result.getActiveItems() shouldHaveSize 1
-                result.getActiveItems()[0].productId shouldBe productId
+                result.getActiveItems()[0].productId shouldBe productIdLong
                 result.getActiveItems()[0].quantity shouldBe quantity
 
-                verify(exactly = 1) { productClient.getProductById(any()) }
+                verify(exactly = 1) { idGenerator.decode(productIdString) }
+                verify(exactly = 1) { productClient.getProductById(productIdString) }
                 verify(exactly = 1) { cartRepository.save(any()) }
             }
         }
 
         `when`("존재하지 않는 상품을 추가하려고 하면") {
+            every { idGenerator.decode(productIdString) } returns productIdLong
             every { cartRepository.findByUserIdWithItems(userId) } returns Optional.of(cart)
-            every { productClient.getProductById(any()) } returns null
+            every { productClient.getProductById(productIdString) } returns null
 
             then("ProductNotAvailableException이 발생해야 한다") {
                 val exception = shouldThrow<CartException.ProductNotAvailableException> {
-                    cartService.addItemToCart(userId, productId, quantity)
+                    cartService.addItemToCart(userId, productIdString, quantity)
                 }
-                exception.message shouldBe "상품을 사용할 수 없습니다. productId=$productId"
+                exception.message shouldBe "상품을 사용할 수 없습니다. productId=$productIdLong"
             }
         }
 
         `when`("비활성 상품을 추가하려고 하면") {
             val inactiveProduct = product.copy(status = "INACTIVE")
 
+            every { idGenerator.decode(productIdString) } returns productIdLong
             every { cartRepository.findByUserIdWithItems(userId) } returns Optional.of(cart)
-            every { productClient.getProductById(any()) } returns inactiveProduct
+            every { productClient.getProductById(productIdString) } returns inactiveProduct
 
             then("ProductNotAvailableException이 발생해야 한다") {
                 val exception = shouldThrow<CartException.ProductNotAvailableException> {
-                    cartService.addItemToCart(userId, productId, quantity)
+                    cartService.addItemToCart(userId, productIdString, quantity)
                 }
-                exception.message shouldBe "상품을 사용할 수 없습니다. productId=$productId"
+                exception.message shouldBe "상품을 사용할 수 없습니다. productId=$productIdLong"
             }
         }
 
         `when`("수량이 0 이하면") {
             then("IllegalArgumentException이 발생해야 한다") {
                 val exception = shouldThrow<IllegalArgumentException> {
-                    cartService.addItemToCart(userId, productId, 0)
+                    cartService.addItemToCart(userId, productIdString, 0)
                 }
                 exception.message shouldBe "수량은 1 이상이어야 합니다"
             }

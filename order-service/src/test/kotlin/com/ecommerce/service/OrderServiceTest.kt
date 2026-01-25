@@ -34,8 +34,8 @@ class OrderServiceTest : BehaviorSpec({
     }
 
     given("OrderService의 createOrder 메서드가 주어졌을 때") {
+        val userId = "user123"
         val request = CreateOrderRequest(
-            userId = "user123",
             items = listOf(
                 OrderItemRequest(
                     productId = "1",
@@ -80,7 +80,7 @@ class OrderServiceTest : BehaviorSpec({
             every { orderNumberGenerator.generate() } returns "ORD-20250128-000001"
 
             then("주문이 정상적으로 생성되어야 한다") {
-                val response = orderService.createOrder(request)
+                val response = orderService.createOrder(request, userId)
 
                 response.userId shouldBe "user123"
                 response.status shouldBe OrderStatus.PENDING
@@ -98,7 +98,6 @@ class OrderServiceTest : BehaviorSpec({
 
         `when`("여러 상품을 포함한 주문을 생성하면") {
             val multiItemRequest = CreateOrderRequest(
-                userId = "user123",
                 items = listOf(
                     OrderItemRequest(productId = "1", quantity = 2),
                     OrderItemRequest(productId = "2", quantity = 1)
@@ -117,7 +116,7 @@ class OrderServiceTest : BehaviorSpec({
             every { orderNumberGenerator.generate() } returns "ORD-20250128-000002"
 
             then("모든 상품에 대해 재고 예약 요청이 발행되어야 한다") {
-                orderService.createOrder(multiItemRequest)
+                orderService.createOrder(multiItemRequest, userId)
 
                 verify(exactly = 2) { orderItemService.addOrderItem(any(), any()) }
                 verify(exactly = 2) { kafkaTemplate.send("inventory-reservation-request", any(), any()) }

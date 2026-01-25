@@ -11,7 +11,11 @@ class JwtTokenProviderTest : BehaviorSpec({
 
     val secretKey = "super-secret-key-must-be-very-long-to-be-secure-enough-for-hs256"
     val encodedSecret = Base64.getEncoder().encodeToString(secretKey.toByteArray())
-    val jwtProperties = JwtProperties(secret = encodedSecret, expiration = Duration.ofHours(1))
+    val jwtProperties = JwtProperties(
+        secret = encodedSecret,
+        accessTokenExpiration = Duration.ofHours(1),
+        refreshTokenExpiration = Duration.ofHours(24)
+    )
     
     val tokenProvider = JwtTokenProvider(jwtProperties)
 

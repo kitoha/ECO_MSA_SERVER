@@ -10,6 +10,14 @@ class TsidGenerator : IdGenerator {
         return TSID.fast().toLong()
     }
 
+    override fun encode(id: Long): String {
+        return TSID.from(id).toString()
+    }
+
+    override fun decode(tsid: String): Long {
+        return TSID.from(tsid).toLong()
+    }
+
     companion object {
 
         fun generate(): Long {
