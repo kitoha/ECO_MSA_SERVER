@@ -27,10 +27,8 @@ class AuthController(
 
     @PostMapping("/logout")
     fun logout(response: HttpServletResponse): ResponseEntity<Void> {
-        // Access Token 쿠키 삭제
         cookieUtils.deleteCookie(response, AuthConstants.ACCESS_TOKEN_COOKIE_NAME)
-        
-        // Refresh Token 쿠키 삭제
+
         cookieUtils.deleteCookie(response, refreshTokenProperties.cookieName)
         
         return ResponseEntity.ok().build()
@@ -42,17 +40,13 @@ class AuthController(
         response: HttpServletResponse
     ): ResponseEntity<Void> {
         try {
-            // 1. 리프레시 토큰 갱신 (Rotation)
             val rotatedToken = refreshTokenService.rotateRefreshToken(oldRefreshToken)
-            
-            // 2. 사용자 정보 조회
+
             val user = userRepository.findById(rotatedToken.userId)
                 .orElseThrow { throw IllegalArgumentException("User not found") }
 
-            // 3. 새 액세스 토큰 생성
             val newAccessToken = tokenProvider.createAccessToken(user.id!!, user.email, user.role.name)
 
-            // 4. 쿠키 업데이트
             cookieUtils.addCookie(
                 response, 
                 AuthConstants.ACCESS_TOKEN_COOKIE_NAME, 

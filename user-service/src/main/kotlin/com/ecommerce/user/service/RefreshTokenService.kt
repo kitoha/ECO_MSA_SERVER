@@ -19,8 +19,6 @@ class RefreshTokenService(
     private val logger = LoggerFactory.getLogger(RefreshTokenService::class.java)
 
     fun createRefreshToken(userId: Long): RefreshToken {
-        logger.info("Creating new refresh token for user: $userId")
-        
         val now = LocalDateTime.now()
         val tokenValue = UUID.randomUUID().toString()
         val rotationGroup = UUID.randomUUID().toString()
@@ -47,7 +45,6 @@ class RefreshTokenService(
         }
 
         if (oldToken.isExpired()) {
-            logger.warn("Expired refresh token used: $oldTokenValue")
             refreshTokenRepository.delete(oldToken)
             throw IllegalArgumentException("Refresh token is expired")
         }

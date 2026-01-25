@@ -37,8 +37,6 @@ class OrderService(
 
     @Transactional
     fun createOrder(request: CreateOrderRequest, userId: String): OrderResponse {
-        logger.info("Creating order for user: $userId")
-
         val totalAmount = orderItemService.calculateOrderTotal(request.items)
 
         val order = Order(
