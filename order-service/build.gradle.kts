@@ -15,6 +15,9 @@ repositories {
 }
 
 dependencies {
+  // Proto Schema
+  implementation(project(":proto-schema"))
+
   implementation(libs.spring.boot.starter.web)
   implementation(libs.jackson.module.kotlin)
   implementation(libs.spring.boot.starter.data.jpa)

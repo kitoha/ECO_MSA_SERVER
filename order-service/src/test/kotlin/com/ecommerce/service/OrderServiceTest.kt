@@ -24,13 +24,14 @@ class OrderServiceTest : BehaviorSpec({
     val orderRepository = mockk<OrderRepository>()
     val orderItemService = mockk<OrderItemService>()
     val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
+    val protoKafkaTemplate = mockk<KafkaTemplate<String, com.ecommerce.proto.order.OrderCreatedEvent>>()
     val orderNumberGenerator = mockk<OrderNumberGenerator>()
     val idGenerator = mockk<TsidGenerator>()
 
-    val orderService = OrderService(orderRepository, orderItemService, kafkaTemplate, orderNumberGenerator, idGenerator)
+    val orderService = OrderService(orderRepository, orderItemService, kafkaTemplate, protoKafkaTemplate, orderNumberGenerator, idGenerator)
 
     beforeEach {
-        clearMocks(orderRepository, orderItemService, kafkaTemplate, idGenerator, answers = false)
+        clearMocks(orderRepository, orderItemService, kafkaTemplate, protoKafkaTemplate, idGenerator, answers = false)
     }
 
     given("OrderService의 createOrder 메서드가 주어졌을 때") {
@@ -77,6 +78,7 @@ class OrderServiceTest : BehaviorSpec({
                 )
             )
             every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
             every { orderNumberGenerator.generate() } returns "ORD-20250128-000001"
 
             then("주문이 정상적으로 생성되어야 한다") {
@@ -92,7 +94,7 @@ class OrderServiceTest : BehaviorSpec({
                 verify(exactly = 1) { orderItemService.addOrderItem(any(), any()) }
                 verify(exactly = 1) { orderItemService.getOrderItems(any()) }
                 verify(exactly = 1) { kafkaTemplate.send("inventory-reservation-request", any(), any()) }
-                verify(exactly = 1) { kafkaTemplate.send("order-created", any(), any()) }
+                verify(exactly = 1) { protoKafkaTemplate.send("order-created", any(), any()) }
             }
         }
 
@@ -113,6 +115,7 @@ class OrderServiceTest : BehaviorSpec({
             every { orderItemService.addOrderItem(any(), any()) } just runs
             every { orderItemService.getOrderItems(any()) } returns emptyList()
             every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
             every { orderNumberGenerator.generate() } returns "ORD-20250128-000002"
 
             then("모든 상품에 대해 재고 예약 요청이 발행되어야 한다") {

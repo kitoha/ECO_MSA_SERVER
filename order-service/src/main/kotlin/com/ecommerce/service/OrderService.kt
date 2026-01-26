@@ -5,8 +5,6 @@ import com.ecommerce.enums.OrderStatus
 import com.ecommerce.event.InventoryReservationRequest
 import com.ecommerce.event.OrderCancelledEvent
 import com.ecommerce.event.OrderConfirmedEvent
-import com.ecommerce.event.OrderCreatedEvent
-import com.ecommerce.event.OrderItemData
 import com.ecommerce.generator.TsidGenerator
 import com.ecommerce.repository.OrderRepository
 import com.ecommerce.request.CreateOrderRequest
@@ -29,11 +27,49 @@ class OrderService(
     private val orderRepository: OrderRepository,
     private val orderItemService: OrderItemService,
     private val kafkaTemplate: KafkaTemplate<String, Any>,
+    private val protoKafkaTemplate: KafkaTemplate<String, com.ecommerce.proto.order.OrderCreatedEvent>,
     private val orderNumberGenerator: OrderNumberGenerator,
     private val idGenerator: TsidGenerator
 ) {
 
     private val logger = LoggerFactory.getLogger(OrderService::class.java)
+
+    private fun createMoneyProto(amount: java.math.BigDecimal): com.ecommerce.proto.common.Money {
+        return com.ecommerce.proto.common.Money.newBuilder()
+            .setAmount(amount.toString())
+            .setCurrency("KRW")
+            .build()
+    }
+
+    private fun createOrderItemProto(item: com.ecommerce.dto.OrderItemDto): com.ecommerce.proto.order.OrderItem {
+        return com.ecommerce.proto.order.OrderItem.newBuilder()
+            .setProductId(item.productId)
+            .setProductName(item.productName)
+            .setPrice(createMoneyProto(item.price))
+            .setQuantity(item.quantity)
+            .build()
+    }
+
+    private fun createOrderCreatedEventProto(
+        order: Order,
+        orderItems: List<com.ecommerce.dto.OrderItemDto>
+    ): com.ecommerce.proto.order.OrderCreatedEvent {
+        val now = java.time.Instant.now()
+        return com.ecommerce.proto.order.OrderCreatedEvent.newBuilder()
+            .setOrderId(order.id)
+            .setOrderNumber(order.orderNumber)
+            .setUserId(order.userId)
+            .addAllItems(orderItems.map { createOrderItemProto(it) })
+            .setTotalAmount(createMoneyProto(order.totalAmount))
+            .setShippingAddress(order.shippingAddress)
+            .setShippingName(order.shippingName)
+            .setShippingPhone(order.shippingPhone)
+            .setTimestamp(com.google.protobuf.Timestamp.newBuilder()
+                .setSeconds(now.epochSecond)
+                .setNanos(now.nano)
+                .build())
+            .build()
+    }
 
     @Transactional
     fun createOrder(request: CreateOrderRequest, userId: String): OrderResponse {
@@ -69,25 +105,9 @@ class OrderService(
             logger.info("Sent inventory reservation request for product: ${itemRequest.productId}")
         }
 
-        val orderCreatedEvent = OrderCreatedEvent(
-            orderId = savedOrder.id,
-            orderNumber = savedOrder.orderNumber,
-            userId = savedOrder.userId,
-            items = orderItems.map {
-                OrderItemData(
-                    productId = it.productId,
-                    productName = it.productName,
-                    price = it.price,
-                    quantity = it.quantity
-                )
-            },
-            totalAmount = savedOrder.totalAmount,
-            shippingAddress = savedOrder.shippingAddress,
-            shippingName = savedOrder.shippingName,
-            shippingPhone = savedOrder.shippingPhone
-        )
-        kafkaTemplate.send("order-created", savedOrder.orderNumber, orderCreatedEvent)
-        logger.info("Order created successfully: ${savedOrder.orderNumber}")
+        val protoEvent = createOrderCreatedEventProto(savedOrder, orderItems)
+        protoKafkaTemplate.send("order-created", savedOrder.orderNumber, protoEvent)
+        logger.info("Published Protobuf event to order-created: ${savedOrder.orderNumber}")
 
         return OrderResponse(
             id = savedOrder.id,
