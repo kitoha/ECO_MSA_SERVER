@@ -2,8 +2,8 @@ package com.ecommerce.service
 
 import com.ecommerce.enums.PaymentMethod
 import com.ecommerce.enums.PaymentStatus
-import com.ecommerce.event.*
 import com.ecommerce.fixtures.PaymentFixtures
+import com.google.protobuf.Message
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.*
@@ -13,7 +13,7 @@ import java.math.BigDecimal
 class PaymentEventPublisherTest : BehaviorSpec({
   isolationMode = IsolationMode.InstancePerLeaf
 
-  val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
+  val kafkaTemplate = mockk<KafkaTemplate<String, Message>>()
   val publisher = PaymentEventPublisher(kafkaTemplate)
 
   beforeTest {
@@ -31,19 +31,19 @@ class PaymentEventPublisherTest : BehaviorSpec({
         paymentMethod = PaymentMethod.CARD
       )
 
-      then("payment-created 토픽으로 PaymentCreatedEvent를 발행해야 한다") {
+      then("payment-created 토픽으로 PaymentCreatedEvent(Protobuf)를 발행해야 한다") {
         publisher.publishPaymentCreated(payment)
 
         verify {
           kafkaTemplate.send(
             "payment-created",
             "ORDER-001",
-            match<PaymentCreatedEvent> {
+            match<com.ecommerce.proto.payment.PaymentCreatedEvent> {
               it.paymentId == 1L &&
                 it.orderId == "ORDER-001" &&
                 it.userId == "USER-001" &&
-                it.amount == BigDecimal("10000.00") &&
-                it.paymentMethod == PaymentMethod.CARD
+                it.amount.amount == "10000.00" &&
+                it.paymentMethod == com.ecommerce.proto.payment.PaymentMethod.CARD
             }
           )
         }
@@ -62,18 +62,18 @@ class PaymentEventPublisherTest : BehaviorSpec({
         pgPaymentKey = "PG-KEY-001"
       )
 
-      then("payment-completed 토픽으로 PaymentCompletedEvent를 발행해야 한다") {
+      then("payment-completed 토픽으로 PaymentCompletedEvent(Protobuf)를 발행해야 한다") {
         publisher.publishPaymentCompleted(payment)
 
         verify {
           kafkaTemplate.send(
             "payment-completed",
             "ORDER-001",
-            match<PaymentCompletedEvent> {
+            match<com.ecommerce.proto.payment.PaymentCompletedEvent> {
               it.paymentId == 1L &&
                 it.orderId == "ORDER-001" &&
                 it.userId == "USER-001" &&
-                it.amount == BigDecimal("10000.00") &&
+                it.amount.amount == "10000.00" &&
                 it.pgProvider == "TOSS" &&
                 it.pgPaymentKey == "PG-KEY-001"
             }
@@ -101,7 +101,7 @@ class PaymentEventPublisherTest : BehaviorSpec({
           kafkaTemplate.send(
             "payment-completed",
             "ORDER-001",
-            match<PaymentCompletedEvent> {
+            match<com.ecommerce.proto.payment.PaymentCompletedEvent> {
               it.pgProvider == "" &&
                 it.pgPaymentKey == ""
             }
@@ -121,18 +121,18 @@ class PaymentEventPublisherTest : BehaviorSpec({
       )
       val failureReason = "카드 한도 초과"
 
-      then("payment-failed 토픽으로 PaymentFailedEvent를 발행해야 한다") {
+      then("payment-failed 토픽으로 PaymentFailedEvent(Protobuf)를 발행해야 한다") {
         publisher.publishPaymentFailed(payment, failureReason)
 
         verify {
           kafkaTemplate.send(
             "payment-failed",
             "ORDER-001",
-            match<PaymentFailedEvent> {
+            match<com.ecommerce.proto.payment.PaymentFailedEvent> {
               it.paymentId == 1L &&
                 it.orderId == "ORDER-001" &&
                 it.userId == "USER-001" &&
-                it.amount == BigDecimal("10000.00") &&
+                it.amount.amount == "10000.00" &&
                 it.failureReason == "카드 한도 초과"
             }
           )
@@ -151,18 +151,18 @@ class PaymentEventPublisherTest : BehaviorSpec({
       )
       val reason = "사용자 취소"
 
-      then("payment-cancelled 토픽으로 PaymentCancelledEvent를 발행해야 한다") {
+      then("payment-cancelled 토픽으로 PaymentCancelledEvent(Protobuf)를 발행해야 한다") {
         publisher.publishPaymentCancelled(payment, reason)
 
         verify {
           kafkaTemplate.send(
             "payment-cancelled",
             "ORDER-001",
-            match<PaymentCancelledEvent> {
+            match<com.ecommerce.proto.payment.PaymentCancelledEvent> {
               it.paymentId == 1L &&
                 it.orderId == "ORDER-001" &&
                 it.userId == "USER-001" &&
-                it.amount == BigDecimal("10000.00") &&
+                it.amount.amount == "10000.00" &&
                 it.reason == "사용자 취소"
             }
           )
@@ -181,18 +181,18 @@ class PaymentEventPublisherTest : BehaviorSpec({
       )
       val reason = "상품 환불"
 
-      then("payment-refunded 토픽으로 PaymentRefundedEvent를 발행해야 한다") {
+      then("payment-refunded 토픽으로 PaymentRefundedEvent(Protobuf)를 발행해야 한다") {
         publisher.publishPaymentRefunded(payment, reason)
 
         verify {
           kafkaTemplate.send(
             "payment-refunded",
             "ORDER-001",
-            match<PaymentRefundedEvent> {
+            match<com.ecommerce.proto.payment.PaymentRefundedEvent> {
               it.paymentId == 1L &&
                 it.orderId == "ORDER-001" &&
                 it.userId == "USER-001" &&
-                it.amount == BigDecimal("10000.00") &&
+                it.amount.amount == "10000.00" &&
                 it.reason == "상품 환불"
             }
           )
@@ -216,11 +216,11 @@ class PaymentEventPublisherTest : BehaviorSpec({
         publisher.publishPaymentCancelled(payment, "취소")
         publisher.publishPaymentRefunded(payment, "환불")
 
-        verify(exactly = 1) { kafkaTemplate.send("payment-created", any<String>(), any<PaymentCreatedEvent>()) }
-        verify(exactly = 1) { kafkaTemplate.send("payment-completed", any<String>(), any<PaymentCompletedEvent>()) }
-        verify(exactly = 1) { kafkaTemplate.send("payment-failed", any<String>(), any<PaymentFailedEvent>()) }
-        verify(exactly = 1) { kafkaTemplate.send("payment-cancelled", any<String>(), any<PaymentCancelledEvent>()) }
-        verify(exactly = 1) { kafkaTemplate.send("payment-refunded", any<String>(), any<PaymentRefundedEvent>()) }
+        verify(exactly = 1) { kafkaTemplate.send("payment-created", any<String>(), any<com.ecommerce.proto.payment.PaymentCreatedEvent>()) }
+        verify(exactly = 1) { kafkaTemplate.send("payment-completed", any<String>(), any<com.ecommerce.proto.payment.PaymentCompletedEvent>()) }
+        verify(exactly = 1) { kafkaTemplate.send("payment-failed", any<String>(), any<com.ecommerce.proto.payment.PaymentFailedEvent>()) }
+        verify(exactly = 1) { kafkaTemplate.send("payment-cancelled", any<String>(), any<com.ecommerce.proto.payment.PaymentCancelledEvent>()) }
+        verify(exactly = 1) { kafkaTemplate.send("payment-refunded", any<String>(), any<com.ecommerce.proto.payment.PaymentRefundedEvent>()) }
       }
     }
   }

@@ -6,6 +6,7 @@ import com.ecommerce.inventory.enums.InventoryChangeType
 import com.ecommerce.inventory.enums.ReservationStatus
 import com.ecommerce.inventory.repository.Inventory.InventoryRepository
 import com.ecommerce.inventory.repository.InventoryReservation.InventoryReservationRepository
+import com.google.protobuf.Message
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
@@ -29,7 +30,7 @@ class InventoryReservationServiceTest : BehaviorSpec({
     val inventoryReservationRepository = mockk<InventoryReservationRepository>()
     val inventoryHistoryService = mockk<InventoryHistoryService>()
     val redisTemplate = mockk<RedisTemplate<String, String>>()
-    val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
+    val kafkaTemplate = mockk<KafkaTemplate<String, Message>>()
     val zSetOperations = mockk<ZSetOperations<String, String>>()
 
     val inventoryReservationService = InventoryReservationService(

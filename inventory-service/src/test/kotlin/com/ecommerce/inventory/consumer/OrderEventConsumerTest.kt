@@ -2,11 +2,13 @@ package com.ecommerce.inventory.consumer
 
 import com.ecommerce.inventory.entity.InventoryReservation
 import com.ecommerce.inventory.enums.ReservationStatus
-import com.ecommerce.inventory.event.InventoryReservationRequest
-import com.ecommerce.inventory.event.OrderCancelledEvent
-import com.ecommerce.inventory.event.OrderConfirmedEvent
-import com.ecommerce.inventory.event.ReservationFailedEvent
 import com.ecommerce.inventory.service.InventoryReservationService
+import com.ecommerce.proto.inventory.InventoryReservationRequest
+import com.ecommerce.proto.inventory.ReservationFailedEvent
+import com.ecommerce.proto.order.OrderCancelledEvent
+import com.ecommerce.proto.order.OrderConfirmedEvent
+import com.google.protobuf.Message
+import com.google.protobuf.Timestamp
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.*
@@ -18,7 +20,7 @@ class OrderEventConsumerTest : BehaviorSpec({
     isolationMode = IsolationMode.InstancePerLeaf
 
     val inventoryReservationService = mockk<InventoryReservationService>()
-    val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
+    val kafkaTemplate = mockk<KafkaTemplate<String, Message>>()
     val acknowledgment = mockk<Acknowledgment>()
 
     val consumer = OrderEventConsumer(inventoryReservationService, kafkaTemplate)
@@ -28,12 +30,15 @@ class OrderEventConsumerTest : BehaviorSpec({
         every { acknowledgment.acknowledge() } just runs
     }
 
-    given("InventoryReservationRequest가 수신되었을 때") {
-        val event = InventoryReservationRequest(
-            orderId = "ORDER-001",
-            productId = "PRODUCT-001",
-            quantity = 5
-        )
+    given("InventoryReservationRequest(Protobuf)가 수신되었을 때") {
+        val event = InventoryReservationRequest.newBuilder()
+            .setOrderId("ORDER-001")
+            .setProductId("PRODUCT-001")
+            .setQuantity(5)
+            .setTimestamp(Timestamp.newBuilder()
+                .setSeconds(System.currentTimeMillis() / 1000)
+                .build())
+            .build()
 
         `when`("재고가 충분하면") {
             val reservation = InventoryReservation(
@@ -131,12 +136,15 @@ class OrderEventConsumerTest : BehaviorSpec({
         }
     }
 
-    given("OrderConfirmedEvent가 수신되었을 때") {
-        val event = OrderConfirmedEvent(
-            orderId = 1L,
-            orderNumber = "ORDER-001",
-            userId = "USER-001"
-        )
+    given("OrderConfirmedEvent(Protobuf)가 수신되었을 때") {
+        val event = OrderConfirmedEvent.newBuilder()
+            .setOrderId(1L)
+            .setOrderNumber("ORDER-001")
+            .setUserId("USER-001")
+            .setTimestamp(Timestamp.newBuilder()
+                .setSeconds(System.currentTimeMillis() / 1000)
+                .build())
+            .build()
 
         `when`("해당 주문의 예약이 존재하면") {
             every { inventoryReservationService.confirmReservationsByOrderId(event.orderNumber) } just runs
@@ -163,13 +171,16 @@ class OrderEventConsumerTest : BehaviorSpec({
         }
     }
 
-    given("OrderCancelledEvent가 수신되었을 때") {
-        val event = OrderCancelledEvent(
-            orderId = 1L,
-            orderNumber = "ORDER-001",
-            userId = "USER-001",
-            reason = "사용자 요청"
-        )
+    given("OrderCancelledEvent(Protobuf)가 수신되었을 때") {
+        val event = OrderCancelledEvent.newBuilder()
+            .setOrderId(1L)
+            .setOrderNumber("ORDER-001")
+            .setUserId("USER-001")
+            .setReason("사용자 요청")
+            .setTimestamp(Timestamp.newBuilder()
+                .setSeconds(System.currentTimeMillis() / 1000)
+                .build())
+            .build()
 
         `when`("해당 주문의 예약이 존재하면") {
             every { inventoryReservationService.cancelReservationsByOrderId(event.orderNumber) } just runs

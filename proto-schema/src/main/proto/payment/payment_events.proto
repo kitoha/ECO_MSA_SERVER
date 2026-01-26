@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package com.ecommerce.payment;
+
+option java_multiple_files = true;
+option java_package = "com.ecommerce.proto.payment";
+option java_outer_classname = "PaymentEventsProto";
+
+import "common/common.proto";
+import "google/protobuf/timestamp.proto";
+
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  CARD = 1;                        // 신용/체크카드
+  BANK_TRANSFER = 2;               // 계좌이체
+  VIRTUAL_ACCOUNT = 3;             // 가상계좌
+  EASY_PAY = 4;                    // 간편결제
+  MOBILE = 5;                      // 휴대폰 소액결제
+}
+
+message PaymentCreatedEvent {
+  int64 payment_id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  com.ecommerce.common.Money amount = 4;
+  PaymentMethod payment_method = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  com.ecommerce.common.Metadata metadata = 7;
+}
+
+message PaymentCompletedEvent {
+  int64 payment_id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  com.ecommerce.common.Money amount = 4;
+  // PG사 (예: TOSS_PAYMENTS, NICE_PAY)
+  string pg_provider = 5;
+  // PG사 결제 키
+  string pg_payment_key = 6;
+  google.protobuf.Timestamp timestamp = 7;
+  com.ecommerce.common.Metadata metadata = 8;
+}
+
+message PaymentFailedEvent {
+  int64 payment_id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  com.ecommerce.common.Money amount = 4;
+  string failure_reason = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  com.ecommerce.common.Metadata metadata = 7;
+}
+
+message PaymentCancelledEvent {
+  int64 payment_id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  com.ecommerce.common.Money amount = 4;
+  string reason = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  com.ecommerce.common.Metadata metadata = 7;
+}
+
+message PaymentRefundedEvent {
+  int64 payment_id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  com.ecommerce.common.Money amount = 4;
+  string reason = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  com.ecommerce.common.Metadata metadata = 7;
+}

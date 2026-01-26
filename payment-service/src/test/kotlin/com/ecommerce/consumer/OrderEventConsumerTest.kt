@@ -2,14 +2,12 @@ package com.ecommerce.consumer
 
 import com.ecommerce.enums.PaymentMethod
 import com.ecommerce.enums.PaymentStatus
-import com.ecommerce.event.OrderCancelledEvent
-import com.ecommerce.event.OrderCreatedEvent
-import com.ecommerce.event.OrderItemData
 import com.ecommerce.fixtures.PaymentFixtures
 import com.ecommerce.request.CreatePaymentRequest
 import com.ecommerce.response.PaymentResponse
 import com.ecommerce.service.PaymentCommandService
 import com.ecommerce.service.PaymentQueryService
+import com.google.protobuf.Timestamp
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.*
@@ -30,31 +28,38 @@ class OrderEventConsumerTest : BehaviorSpec({
         every { acknowledgment.acknowledge() } just runs
     }
 
-    given("OrderCreatedEvent가 수신되었을 때") {
-        val event = OrderCreatedEvent(
-            orderId = 1L,
-            orderNumber = "ORDER-001",
-            userId = "USER-001",
-            items = listOf(
-                OrderItemData(
-                    productId = "PROD-001",
-                    productName = "테스트 상품",
-                    price = BigDecimal("50000"),
-                    quantity = 2
-                )
-            ),
-            totalAmount = BigDecimal("100000"),
-            shippingAddress = "서울시 강남구",
-            shippingName = "홍길동",
-            shippingPhone = "010-1234-5678"
-        )
+    given("OrderCreatedEvent(Protobuf)가 수신되었을 때") {
+        val event = com.ecommerce.proto.order.OrderCreatedEvent.newBuilder()
+            .setOrderId(1L)
+            .setOrderNumber("ORDER-001")
+            .setUserId("USER-001")
+            .addItems(com.ecommerce.proto.order.OrderItem.newBuilder()
+                .setProductId("PROD-001")
+                .setProductName("테스트 상품")
+                .setPrice(com.ecommerce.proto.common.Money.newBuilder()
+                    .setAmount("50000")
+                    .setCurrency("KRW")
+                    .build())
+                .setQuantity(2)
+                .build())
+            .setTotalAmount(com.ecommerce.proto.common.Money.newBuilder()
+                .setAmount("100000")
+                .setCurrency("KRW")
+                .build())
+            .setShippingAddress("서울시 강남구")
+            .setShippingName("홍길동")
+            .setShippingPhone("010-1234-5678")
+            .setTimestamp(Timestamp.newBuilder()
+                .setSeconds(System.currentTimeMillis() / 1000)
+                .build())
+            .build()
 
         `when`("정상적으로 처리되면") {
             val paymentResponse = PaymentResponse(
                 id = 1L,
                 orderId = event.orderNumber,
                 userId = event.userId,
-                amount = event.totalAmount,
+                amount = BigDecimal(event.totalAmount.amount),
                 status = PaymentStatus.PENDING,
                 paymentMethod = PaymentMethod.CARD,
                 pgProvider = null,
@@ -74,7 +79,7 @@ class OrderEventConsumerTest : BehaviorSpec({
                     commandService.createPayment(match<CreatePaymentRequest> {
                         it.orderId == event.orderNumber &&
                             it.userId == event.userId &&
-                            it.amount == event.totalAmount &&
+                            it.amount == BigDecimal(event.totalAmount.amount) &&
                             it.paymentMethod == PaymentMethod.CARD
                     })
                 }
@@ -94,13 +99,16 @@ class OrderEventConsumerTest : BehaviorSpec({
         }
     }
 
-    given("OrderCancelledEvent가 수신되었을 때") {
-        val event = OrderCancelledEvent(
-            orderId = 1L,
-            orderNumber = "ORDER-001",
-            userId = "USER-001",
-            reason = "재고 부족"
-        )
+    given("OrderCancelledEvent(Protobuf)가 수신되었을 때") {
+        val event = com.ecommerce.proto.order.OrderCancelledEvent.newBuilder()
+            .setOrderId(1L)
+            .setOrderNumber("ORDER-001")
+            .setUserId("USER-001")
+            .setReason("재고 부족")
+            .setTimestamp(Timestamp.newBuilder()
+                .setSeconds(System.currentTimeMillis() / 1000)
+                .build())
+            .build()
 
         `when`("해당 주문의 결제가 존재하면") {
             val payment = PaymentFixtures.createPayment(

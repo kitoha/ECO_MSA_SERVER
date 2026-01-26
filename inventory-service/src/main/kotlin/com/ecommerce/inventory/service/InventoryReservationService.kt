@@ -3,11 +3,14 @@ package com.ecommerce.inventory.service
 import com.ecommerce.inventory.entity.InventoryReservation
 import com.ecommerce.inventory.enums.InventoryChangeType
 import com.ecommerce.inventory.enums.ReservationStatus
-import com.ecommerce.inventory.event.ReservationCancelledEvent
-import com.ecommerce.inventory.event.ReservationConfirmedEvent
-import com.ecommerce.inventory.event.ReservationCreatedEvent
+
 import com.ecommerce.inventory.repository.Inventory.InventoryRepository
 import com.ecommerce.inventory.repository.InventoryReservation.InventoryReservationRepository
+import com.ecommerce.proto.inventory.ReservationCancelledEvent
+import com.ecommerce.proto.inventory.ReservationConfirmedEvent
+import com.ecommerce.proto.inventory.ReservationCreatedEvent
+import com.google.protobuf.Message
+import com.google.protobuf.Timestamp
 import org.slf4j.LoggerFactory
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.data.redis.core.RedisTemplate
@@ -28,7 +31,7 @@ class InventoryReservationService(
   private val inventoryReservationRepository: InventoryReservationRepository,
   private val inventoryHistoryService: InventoryHistoryService,
   private val redisTemplate: RedisTemplate<String, String>,
-  private val kafkaTemplate: KafkaTemplate<String, Any>
+  private val kafkaTemplate: KafkaTemplate<String, Message>
 ) {
 
   companion object {
@@ -83,13 +86,20 @@ class InventoryReservationService(
     val expiryScore = expiresAt.atZone(ZoneId.systemDefault()).toInstant().epochSecond.toDouble()
     redisTemplate.opsForZSet().add(RESERVATION_EXPIRY_KEY, savedReservation.id.toString(), expiryScore)
 
-    val event = ReservationCreatedEvent(
-      reservationId = savedReservation.id!!,
-      orderId = orderId,
-      productId = productId,
-      quantity = quantity,
-      expiresAt = expiresAt
-    )
+    val now = java.time.Instant.now()
+    val event = ReservationCreatedEvent.newBuilder()
+      .setReservationId(savedReservation.id!!)
+      .setOrderId(orderId)
+      .setProductId(productId)
+      .setQuantity(quantity)
+      .setExpiresAt(Timestamp.newBuilder()
+        .setSeconds(expiresAt.atZone(ZoneId.systemDefault()).toInstant().epochSecond)
+        .build())
+      .setTimestamp(Timestamp.newBuilder()
+        .setSeconds(now.epochSecond)
+        .setNanos(now.nano)
+        .build())
+      .build()
     kafkaTemplate.send("reservation-created", orderId, event)
 
     logger.info("Created reservation: id=${savedReservation.id}, orderId=$orderId, quantity=$quantity, expiresAt=$expiresAt")
@@ -130,10 +140,15 @@ class InventoryReservationService(
 
     redisTemplate.opsForZSet().remove(RESERVATION_EXPIRY_KEY, reservationId.toString())
 
-    val event = ReservationConfirmedEvent(
-      reservationId = reservationId,
-      orderId = reservation.orderId
-    )
+    val now = java.time.Instant.now()
+    val event = ReservationConfirmedEvent.newBuilder()
+      .setReservationId(reservationId)
+      .setOrderId(reservation.orderId)
+      .setTimestamp(Timestamp.newBuilder()
+        .setSeconds(now.epochSecond)
+        .setNanos(now.nano)
+        .build())
+      .build()
     kafkaTemplate.send("reservation-confirmed", reservation.orderId, event)
 
     logger.info("Confirmed reservation: id=$reservationId, orderId=${reservation.orderId}")
@@ -172,10 +187,15 @@ class InventoryReservationService(
 
     redisTemplate.opsForZSet().remove(RESERVATION_EXPIRY_KEY, reservationId.toString())
 
-    val event = ReservationCancelledEvent(
-      reservationId = reservationId,
-      reason = "MANUAL_CANCEL"
-    )
+    val now = java.time.Instant.now()
+    val event = ReservationCancelledEvent.newBuilder()
+      .setReservationId(reservationId)
+      .setReason("MANUAL_CANCEL")
+      .setTimestamp(Timestamp.newBuilder()
+        .setSeconds(now.epochSecond)
+        .setNanos(now.nano)
+        .build())
+      .build()
     kafkaTemplate.send("reservation-cancelled", reservation.orderId, event)
 
     logger.info("Cancelled reservation: id=$reservationId, orderId=${reservation.orderId}")

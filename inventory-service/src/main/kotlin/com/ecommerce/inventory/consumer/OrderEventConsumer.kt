@@ -1,10 +1,12 @@
 package com.ecommerce.inventory.consumer
 
-import com.ecommerce.inventory.event.InventoryReservationRequest
-import com.ecommerce.inventory.event.OrderCancelledEvent
-import com.ecommerce.inventory.event.OrderConfirmedEvent
-import com.ecommerce.inventory.event.ReservationFailedEvent
 import com.ecommerce.inventory.service.InventoryReservationService
+import com.ecommerce.proto.inventory.InventoryReservationRequest
+import com.ecommerce.proto.inventory.ReservationFailedEvent as ProtoReservationFailedEvent
+import com.ecommerce.proto.order.OrderCancelledEvent
+import com.ecommerce.proto.order.OrderConfirmedEvent
+import com.google.protobuf.Message
+import com.google.protobuf.Timestamp
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.core.KafkaTemplate
@@ -15,7 +17,7 @@ import org.springframework.stereotype.Component
 @Component
 class OrderEventConsumer(
     private val inventoryReservationService: InventoryReservationService,
-    private val kafkaTemplate: KafkaTemplate<String, Any>
+    private val kafkaTemplate: KafkaTemplate<String, Message>
 ) {
 
     companion object {
@@ -25,7 +27,7 @@ class OrderEventConsumer(
     @KafkaListener(
         topics = ["inventory-reservation-request"],
         groupId = "inventory-service",
-        containerFactory = "kafkaListenerContainerFactory"
+        containerFactory = "inventoryReservationRequestListenerContainerFactory"
     )
     fun handleInventoryReservationRequest(
         event: InventoryReservationRequest,
@@ -52,12 +54,17 @@ class OrderEventConsumer(
                 e
             )
 
-            val failedEvent = ReservationFailedEvent(
-                orderId = event.orderId,
-                productId = event.productId,
-                quantity = event.quantity,
-                reason = e.message ?: "Unknown error"
-            )
+            val now = java.time.Instant.now()
+            val failedEvent = ProtoReservationFailedEvent.newBuilder()
+                .setOrderId(event.orderId)
+                .setProductId(event.productId)
+                .setQuantity(event.quantity)
+                .setReason(e.message ?: "Unknown error")
+                .setTimestamp(Timestamp.newBuilder()
+                    .setSeconds(now.epochSecond)
+                    .setNanos(now.nano)
+                    .build())
+                .build()
             kafkaTemplate.send("reservation-failed", event.orderId, failedEvent)
             logger.info("Published ReservationFailedEvent for order: ${event.orderId}")
 
@@ -68,7 +75,7 @@ class OrderEventConsumer(
     @KafkaListener(
         topics = ["order-confirmed"],
         groupId = "inventory-service",
-        containerFactory = "kafkaListenerContainerFactory"
+        containerFactory = "orderConfirmedEventListenerContainerFactory"
     )
     fun handleOrderConfirmed(event: OrderConfirmedEvent, acknowledgment: Acknowledgment) {
         try {
@@ -86,7 +93,7 @@ class OrderEventConsumer(
     @KafkaListener(
         topics = ["order-cancelled"],
         groupId = "inventory-service",
-        containerFactory = "kafkaListenerContainerFactory"
+        containerFactory = "orderCancelledEventListenerContainerFactory"
     )
     fun handleOrderCancelled(event: OrderCancelledEvent, acknowledgment: Acknowledgment) {
         try {
