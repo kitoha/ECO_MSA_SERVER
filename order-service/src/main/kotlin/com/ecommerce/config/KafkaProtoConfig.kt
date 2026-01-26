@@ -1,7 +1,7 @@
 package com.ecommerce.config
 
 import com.ecommerce.kafka.ProtobufSerializer
-import com.ecommerce.proto.order.OrderCreatedEvent
+import com.google.protobuf.Message
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
@@ -20,7 +20,7 @@ class KafkaProtoConfig {
     @Bean
     fun protoProducerFactory(
         @Value("\${spring.kafka.bootstrap-servers}") bootstrapServers: String
-    ): ProducerFactory<String, OrderCreatedEvent> {
+    ): ProducerFactory<String, Message> {
         val configProps = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -34,14 +34,14 @@ class KafkaProtoConfig {
         return DefaultKafkaProducerFactory(
             configProps,
             StringSerializer(),
-            ProtobufSerializer<OrderCreatedEvent>()
+            ProtobufSerializer()
         )
     }
 
     @Bean
     fun protoKafkaTemplate(
-        protoProducerFactory: ProducerFactory<String, OrderCreatedEvent>
-    ): KafkaTemplate<String, OrderCreatedEvent> {
+        protoProducerFactory: ProducerFactory<String, Message>
+    ): KafkaTemplate<String, Message> {
         return KafkaTemplate(protoProducerFactory)
     }
 }

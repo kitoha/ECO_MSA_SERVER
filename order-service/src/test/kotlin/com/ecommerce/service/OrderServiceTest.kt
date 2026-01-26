@@ -8,6 +8,7 @@ import com.ecommerce.repository.OrderRepository
 import com.ecommerce.request.CreateOrderRequest
 import com.ecommerce.request.OrderItemRequest
 import com.ecommerce.util.OrderNumberGenerator
+import com.google.protobuf.Message
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
@@ -24,7 +25,7 @@ class OrderServiceTest : BehaviorSpec({
     val orderRepository = mockk<OrderRepository>()
     val orderItemService = mockk<OrderItemService>()
     val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
-    val protoKafkaTemplate = mockk<KafkaTemplate<String, com.ecommerce.proto.order.OrderCreatedEvent>>()
+    val protoKafkaTemplate = mockk<KafkaTemplate<String, Message>>()
     val orderNumberGenerator = mockk<OrderNumberGenerator>()
     val idGenerator = mockk<TsidGenerator>()
 
@@ -240,7 +241,7 @@ class OrderServiceTest : BehaviorSpec({
         `when`("주문을 취소하면") {
             every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
-            every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
 
             then("주문 상태가 CANCELLED로 변경되어야 한다") {
                 orderService.cancelOrder(orderId)
@@ -249,24 +250,24 @@ class OrderServiceTest : BehaviorSpec({
 
                 verify(exactly = 1) { orderRepository.findById(orderId) }
                 verify(exactly = 1) { orderRepository.save(any()) }
-                verify(exactly = 1) { kafkaTemplate.send("order-cancelled", any(), any()) }
+                verify(exactly = 1) { protoKafkaTemplate.send("order-cancelled", any(), any()) }
             }
         }
 
         `when`("취소 사유와 함께 주문을 취소하면") {
             every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
-            every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
 
             then("취소 이벤트에 사유가 포함되어야 한다") {
                 orderService.cancelOrder(orderId, "재고 부족")
 
                 verify(exactly = 1) {
-                    kafkaTemplate.send(
+                    protoKafkaTemplate.send(
                         "order-cancelled",
                         any(),
-                        match { event: Any ->
-                            event.toString().contains("재고 부족")
+                        match<com.ecommerce.proto.order.OrderCancelledEvent> { event ->
+                            event.reason.contains("재고 부족")
                         }
                     )
                 }
@@ -291,7 +292,7 @@ class OrderServiceTest : BehaviorSpec({
         `when`("주문을 확정하면") {
             every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
-            every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
 
             then("주문 상태가 CONFIRMED로 변경되어야 한다") {
                 orderService.confirmOrder(orderId)
@@ -300,7 +301,7 @@ class OrderServiceTest : BehaviorSpec({
 
                 verify(exactly = 1) { orderRepository.findById(orderId) }
                 verify(exactly = 1) { orderRepository.save(any()) }
-                verify(exactly = 1) { kafkaTemplate.send("order-confirmed", any(), any()) }
+                verify(exactly = 1) { protoKafkaTemplate.send("order-confirmed", any(), any()) }
             }
         }
     }
