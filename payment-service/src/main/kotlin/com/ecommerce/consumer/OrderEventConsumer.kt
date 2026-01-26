@@ -1,8 +1,8 @@
 package com.ecommerce.consumer
 
 import com.ecommerce.enums.PaymentMethod
-import com.ecommerce.event.OrderCancelledEvent
-import com.ecommerce.event.OrderCreatedEvent
+import com.ecommerce.proto.order.OrderCancelledEvent
+import com.ecommerce.proto.order.OrderCreatedEvent
 import com.ecommerce.request.CreatePaymentRequest
 import com.ecommerce.service.PaymentCommandService
 import com.ecommerce.service.PaymentQueryService
@@ -23,7 +23,7 @@ class OrderEventConsumer(
   @KafkaListener(
     topics = ["order-created"],
     groupId = "payment-service",
-    containerFactory = "kafkaListenerContainerFactory"
+    containerFactory = "orderEventListenerContainerFactory"
   )
   fun handleOrderCreated(event: OrderCreatedEvent, acknowledgment: Acknowledgment) {
     try {
@@ -32,7 +32,7 @@ class OrderEventConsumer(
       val request = CreatePaymentRequest(
         orderId = event.orderNumber,
         userId = event.userId,
-        amount = event.totalAmount,
+        amount = java.math.BigDecimal(event.totalAmount.amount),
         paymentMethod = PaymentMethod.CARD
       )
 
@@ -48,7 +48,7 @@ class OrderEventConsumer(
   @KafkaListener(
       topics = ["order-cancelled"],
       groupId = "payment-service",
-      containerFactory = "kafkaListenerContainerFactory"
+      containerFactory = "orderCancelledEventListenerContainerFactory"
   )
   fun handleOrderCancelled(event: OrderCancelledEvent, acknowledgment: Acknowledgment) {
     try {
