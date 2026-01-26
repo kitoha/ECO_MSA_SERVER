@@ -2,8 +2,10 @@ package com.ecommerce.inventory.config
 
 import com.ecommerce.kafka.ProtobufDeserializer
 import com.ecommerce.kafka.ProtobufSerializer
+import com.ecommerce.proto.inventory.InventoryReservationRequest
 import com.ecommerce.proto.order.OrderCancelledEvent
 import com.ecommerce.proto.order.OrderConfirmedEvent
+import com.google.protobuf.Message
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -79,7 +81,7 @@ class KafkaProtoConfig {
     @Bean
     fun reservationEventProducerFactory(
         @Value("\${spring.kafka.bootstrap-servers}") bootstrapServers: String
-    ): ProducerFactory<String, com.google.protobuf.Message> {
+    ): ProducerFactory<String, Message> {
         val props = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -93,8 +95,37 @@ class KafkaProtoConfig {
 
     @Bean
     fun reservationEventKafkaTemplate(
-        reservationEventProducerFactory: ProducerFactory<String, com.google.protobuf.Message>
-    ): KafkaTemplate<String, com.google.protobuf.Message> {
+        reservationEventProducerFactory: ProducerFactory<String, Message>
+    ): KafkaTemplate<String, Message> {
         return KafkaTemplate(reservationEventProducerFactory)
     }
 }
+
+    @Bean
+    fun inventoryReservationRequestConsumerFactory(
+        @Value("\${spring.kafka.bootstrap-servers}") bootstrapServers: String
+    ): ConsumerFactory<String, InventoryReservationRequest> {
+        val props = mapOf(
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ProtobufDeserializer::class.java,
+            ConsumerConfig.GROUP_ID_CONFIG to "inventory-service",
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest"
+        )
+        return DefaultKafkaConsumerFactory(
+            props,
+            StringDeserializer(),
+            ProtobufDeserializer(InventoryReservationRequest::class.java)
+        )
+    }
+
+    @Bean
+    fun inventoryReservationRequestListenerContainerFactory(
+        inventoryReservationRequestConsumerFactory: ConsumerFactory<String, InventoryReservationRequest>
+    ): ConcurrentKafkaListenerContainerFactory<String, InventoryReservationRequest> {
+        val factory = ConcurrentKafkaListenerContainerFactory<String, InventoryReservationRequest>()
+        factory.consumerFactory = inventoryReservationRequestConsumerFactory
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        return factory
+    }

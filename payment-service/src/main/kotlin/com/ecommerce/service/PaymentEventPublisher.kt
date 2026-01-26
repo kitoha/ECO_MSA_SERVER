@@ -1,27 +1,33 @@
 package com.ecommerce.service
 
 import com.ecommerce.entity.Payment
+import com.ecommerce.proto.common.Money
+import com.ecommerce.proto.payment.*
+import com.google.protobuf.Message
+import com.google.protobuf.Timestamp
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Component
+import com.ecommerce.enums.PaymentMethod as DomainPaymentMethod
+import com.ecommerce.proto.payment.PaymentMethod as ProtoPaymentMethod
 
 @Component
 class PaymentEventPublisher(
-  private val kafkaTemplate: KafkaTemplate<String, com.google.protobuf.Message>
+  private val kafkaTemplate: KafkaTemplate<String, Message>
 ) {
 
   private val logger = LoggerFactory.getLogger(PaymentEventPublisher::class.java)
 
-  private fun createMoneyProto(amount: java.math.BigDecimal): com.ecommerce.proto.common.Money {
-    return com.ecommerce.proto.common.Money.newBuilder()
+  private fun createMoneyProto(amount: java.math.BigDecimal): Money {
+    return Money.newBuilder()
       .setAmount(amount.toString())
       .setCurrency("KRW")
       .build()
   }
 
-  private fun createTimestamp(): com.google.protobuf.Timestamp {
+  private fun createTimestamp(): Timestamp {
     val now = java.time.Instant.now()
-    return com.google.protobuf.Timestamp.newBuilder()
+    return Timestamp.newBuilder()
       .setSeconds(now.epochSecond)
       .setNanos(now.nano)
       .build()
@@ -29,15 +35,15 @@ class PaymentEventPublisher(
 
   fun publishPaymentCreated(payment: Payment) {
     val protoPaymentMethod = when (payment.paymentMethod) {
-      com.ecommerce.enums.PaymentMethod.CARD -> com.ecommerce.proto.payment.PaymentMethod.CARD
-      com.ecommerce.enums.PaymentMethod.BANK_TRANSFER -> com.ecommerce.proto.payment.PaymentMethod.BANK_TRANSFER
-      com.ecommerce.enums.PaymentMethod.VIRTUAL_ACCOUNT -> com.ecommerce.proto.payment.PaymentMethod.VIRTUAL_ACCOUNT
-      com.ecommerce.enums.PaymentMethod.EASY_PAY -> com.ecommerce.proto.payment.PaymentMethod.EASY_PAY
-      com.ecommerce.enums.PaymentMethod.MOBILE -> com.ecommerce.proto.payment.PaymentMethod.MOBILE
-      null -> com.ecommerce.proto.payment.PaymentMethod.PAYMENT_METHOD_UNSPECIFIED
+      DomainPaymentMethod.CARD -> ProtoPaymentMethod.CARD
+      DomainPaymentMethod.BANK_TRANSFER -> ProtoPaymentMethod.BANK_TRANSFER
+      DomainPaymentMethod.VIRTUAL_ACCOUNT -> ProtoPaymentMethod.VIRTUAL_ACCOUNT
+      DomainPaymentMethod.EASY_PAY -> ProtoPaymentMethod.EASY_PAY
+      DomainPaymentMethod.MOBILE -> ProtoPaymentMethod.MOBILE
+      null -> ProtoPaymentMethod.PAYMENT_METHOD_UNSPECIFIED
     }
     
-    val event = com.ecommerce.proto.payment.PaymentCreatedEvent.newBuilder()
+    val event = PaymentCreatedEvent.newBuilder()
       .setPaymentId(payment.id)
       .setOrderId(payment.orderId)
       .setUserId(payment.userId)
@@ -50,7 +56,7 @@ class PaymentEventPublisher(
   }
 
   fun publishPaymentCompleted(payment: Payment) {
-    val event = com.ecommerce.proto.payment.PaymentCompletedEvent.newBuilder()
+    val event = PaymentCompletedEvent.newBuilder()
       .setPaymentId(payment.id)
       .setOrderId(payment.orderId)
       .setUserId(payment.userId)
@@ -64,7 +70,7 @@ class PaymentEventPublisher(
   }
 
   fun publishPaymentFailed(payment: Payment, failureReason: String) {
-    val event = com.ecommerce.proto.payment.PaymentFailedEvent.newBuilder()
+    val event = PaymentFailedEvent.newBuilder()
       .setPaymentId(payment.id)
       .setOrderId(payment.orderId)
       .setUserId(payment.userId)
@@ -77,7 +83,7 @@ class PaymentEventPublisher(
   }
 
   fun publishPaymentCancelled(payment: Payment, reason: String) {
-    val event = com.ecommerce.proto.payment.PaymentCancelledEvent.newBuilder()
+    val event = PaymentCancelledEvent.newBuilder()
       .setPaymentId(payment.id)
       .setOrderId(payment.orderId)
       .setUserId(payment.userId)
@@ -90,7 +96,7 @@ class PaymentEventPublisher(
   }
 
   fun publishPaymentRefunded(payment: Payment, reason: String) {
-    val event = com.ecommerce.proto.payment.PaymentRefundedEvent.newBuilder()
+    val event = PaymentRefundedEvent.newBuilder()
       .setPaymentId(payment.id)
       .setOrderId(payment.orderId)
       .setUserId(payment.userId)

@@ -7,6 +7,7 @@ import com.ecommerce.request.CreatePaymentRequest
 import com.ecommerce.response.PaymentResponse
 import com.ecommerce.service.PaymentCommandService
 import com.ecommerce.service.PaymentQueryService
+import com.google.protobuf.Timestamp
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.*
@@ -48,7 +49,7 @@ class OrderEventConsumerTest : BehaviorSpec({
             .setShippingAddress("서울시 강남구")
             .setShippingName("홍길동")
             .setShippingPhone("010-1234-5678")
-            .setTimestamp(com.google.protobuf.Timestamp.newBuilder()
+            .setTimestamp(Timestamp.newBuilder()
                 .setSeconds(System.currentTimeMillis() / 1000)
                 .build())
             .build()
@@ -58,7 +59,7 @@ class OrderEventConsumerTest : BehaviorSpec({
                 id = 1L,
                 orderId = event.orderNumber,
                 userId = event.userId,
-                amount = java.math.BigDecimal(event.totalAmount.amount),
+                amount = BigDecimal(event.totalAmount.amount),
                 status = PaymentStatus.PENDING,
                 paymentMethod = PaymentMethod.CARD,
                 pgProvider = null,
@@ -78,7 +79,7 @@ class OrderEventConsumerTest : BehaviorSpec({
                     commandService.createPayment(match<CreatePaymentRequest> {
                         it.orderId == event.orderNumber &&
                             it.userId == event.userId &&
-                            it.amount == java.math.BigDecimal(event.totalAmount.amount) &&
+                            it.amount == BigDecimal(event.totalAmount.amount) &&
                             it.paymentMethod == PaymentMethod.CARD
                     })
                 }
@@ -104,7 +105,7 @@ class OrderEventConsumerTest : BehaviorSpec({
             .setOrderNumber("ORDER-001")
             .setUserId("USER-001")
             .setReason("재고 부족")
-            .setTimestamp(com.google.protobuf.Timestamp.newBuilder()
+            .setTimestamp(Timestamp.newBuilder()
                 .setSeconds(System.currentTimeMillis() / 1000)
                 .build())
             .build()

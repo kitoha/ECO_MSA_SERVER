@@ -2,12 +2,13 @@ package com.ecommerce.inventory.consumer
 
 import com.ecommerce.inventory.entity.InventoryReservation
 import com.ecommerce.inventory.enums.ReservationStatus
-import com.ecommerce.inventory.event.InventoryReservationRequest
 import com.ecommerce.inventory.service.InventoryReservationService
+import com.ecommerce.proto.inventory.InventoryReservationRequest
 import com.ecommerce.proto.inventory.ReservationFailedEvent
 import com.ecommerce.proto.order.OrderCancelledEvent
 import com.ecommerce.proto.order.OrderConfirmedEvent
 import com.google.protobuf.Message
+import com.google.protobuf.Timestamp
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.*
@@ -29,12 +30,15 @@ class OrderEventConsumerTest : BehaviorSpec({
         every { acknowledgment.acknowledge() } just runs
     }
 
-    given("InventoryReservationRequest가 수신되었을 때") {
-        val event = InventoryReservationRequest(
-            orderId = "ORDER-001",
-            productId = "PRODUCT-001",
-            quantity = 5
-        )
+    given("InventoryReservationRequest(Protobuf)가 수신되었을 때") {
+        val event = InventoryReservationRequest.newBuilder()
+            .setOrderId("ORDER-001")
+            .setProductId("PRODUCT-001")
+            .setQuantity(5)
+            .setTimestamp(Timestamp.newBuilder()
+                .setSeconds(System.currentTimeMillis() / 1000)
+                .build())
+            .build()
 
         `when`("재고가 충분하면") {
             val reservation = InventoryReservation(
@@ -137,7 +141,7 @@ class OrderEventConsumerTest : BehaviorSpec({
             .setOrderId(1L)
             .setOrderNumber("ORDER-001")
             .setUserId("USER-001")
-            .setTimestamp(com.google.protobuf.Timestamp.newBuilder()
+            .setTimestamp(Timestamp.newBuilder()
                 .setSeconds(System.currentTimeMillis() / 1000)
                 .build())
             .build()
@@ -173,7 +177,7 @@ class OrderEventConsumerTest : BehaviorSpec({
             .setOrderNumber("ORDER-001")
             .setUserId("USER-001")
             .setReason("사용자 요청")
-            .setTimestamp(com.google.protobuf.Timestamp.newBuilder()
+            .setTimestamp(Timestamp.newBuilder()
                 .setSeconds(System.currentTimeMillis() / 1000)
                 .build())
             .build()

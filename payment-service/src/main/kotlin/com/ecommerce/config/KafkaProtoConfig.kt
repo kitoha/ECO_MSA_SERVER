@@ -4,6 +4,7 @@ import com.ecommerce.kafka.ProtobufDeserializer
 import com.ecommerce.kafka.ProtobufSerializer
 import com.ecommerce.proto.order.OrderCancelledEvent
 import com.ecommerce.proto.order.OrderCreatedEvent
+import com.google.protobuf.Message
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -79,7 +80,7 @@ class KafkaProtoConfig {
     @Bean
     fun paymentEventProducerFactory(
         @Value("\${spring.kafka.bootstrap-servers}") bootstrapServers: String
-    ): ProducerFactory<String, com.google.protobuf.Message> {
+    ): ProducerFactory<String, Message> {
         val props = mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
@@ -93,8 +94,8 @@ class KafkaProtoConfig {
 
     @Bean
     fun paymentEventKafkaTemplate(
-        paymentEventProducerFactory: ProducerFactory<String, com.google.protobuf.Message>
-    ): KafkaTemplate<String, com.google.protobuf.Message> {
+        paymentEventProducerFactory: ProducerFactory<String, Message>
+    ): KafkaTemplate<String, Message> {
         return KafkaTemplate(paymentEventProducerFactory)
     }
 }

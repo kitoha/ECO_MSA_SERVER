@@ -1,7 +1,7 @@
 package com.ecommerce.inventory.consumer
 
-import com.ecommerce.inventory.event.InventoryReservationRequest
 import com.ecommerce.inventory.service.InventoryReservationService
+import com.ecommerce.proto.inventory.InventoryReservationRequest
 import com.ecommerce.proto.inventory.ReservationFailedEvent as ProtoReservationFailedEvent
 import com.ecommerce.proto.order.OrderCancelledEvent
 import com.ecommerce.proto.order.OrderConfirmedEvent
@@ -27,7 +27,7 @@ class OrderEventConsumer(
     @KafkaListener(
         topics = ["inventory-reservation-request"],
         groupId = "inventory-service",
-        containerFactory = "kafkaListenerContainerFactory"
+        containerFactory = "inventoryReservationRequestListenerContainerFactory"
     )
     fun handleInventoryReservationRequest(
         event: InventoryReservationRequest,

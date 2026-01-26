@@ -24,15 +24,14 @@ class OrderServiceTest : BehaviorSpec({
 
     val orderRepository = mockk<OrderRepository>()
     val orderItemService = mockk<OrderItemService>()
-    val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
     val protoKafkaTemplate = mockk<KafkaTemplate<String, Message>>()
     val orderNumberGenerator = mockk<OrderNumberGenerator>()
     val idGenerator = mockk<TsidGenerator>()
 
-    val orderService = OrderService(orderRepository, orderItemService, kafkaTemplate, protoKafkaTemplate, orderNumberGenerator, idGenerator)
+    val orderService = OrderService(orderRepository, orderItemService, protoKafkaTemplate, orderNumberGenerator, idGenerator)
 
     beforeEach {
-        clearMocks(orderRepository, orderItemService, kafkaTemplate, protoKafkaTemplate, idGenerator, answers = false)
+        clearMocks(orderRepository, orderItemService, protoKafkaTemplate, idGenerator, answers = false)
     }
 
     given("OrderService의 createOrder 메서드가 주어졌을 때") {
@@ -78,7 +77,6 @@ class OrderServiceTest : BehaviorSpec({
                     subtotal = BigDecimal("100000")
                 )
             )
-            every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
             every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
             every { orderNumberGenerator.generate() } returns "ORD-20250128-000001"
 
@@ -94,7 +92,7 @@ class OrderServiceTest : BehaviorSpec({
                 verify(exactly = 1) { orderRepository.save(any()) }
                 verify(exactly = 1) { orderItemService.addOrderItem(any(), any()) }
                 verify(exactly = 1) { orderItemService.getOrderItems(any()) }
-                verify(exactly = 1) { kafkaTemplate.send("inventory-reservation-request", any(), any()) }
+                verify(exactly = 1) { protoKafkaTemplate.send("inventory-reservation-request", any(), any()) }
                 verify(exactly = 1) { protoKafkaTemplate.send("order-created", any(), any()) }
             }
         }
@@ -115,7 +113,6 @@ class OrderServiceTest : BehaviorSpec({
             every { orderRepository.save(any()) } returns savedOrder
             every { orderItemService.addOrderItem(any(), any()) } just runs
             every { orderItemService.getOrderItems(any()) } returns emptyList()
-            every { kafkaTemplate.send(any(), any(), any()) } returns mockk()
             every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
             every { orderNumberGenerator.generate() } returns "ORD-20250128-000002"
 
@@ -123,7 +120,7 @@ class OrderServiceTest : BehaviorSpec({
                 orderService.createOrder(multiItemRequest, userId)
 
                 verify(exactly = 2) { orderItemService.addOrderItem(any(), any()) }
-                verify(exactly = 2) { kafkaTemplate.send("inventory-reservation-request", any(), any()) }
+                verify(exactly = 2) { protoKafkaTemplate.send("inventory-reservation-request", any(), any()) }
             }
         }
     }

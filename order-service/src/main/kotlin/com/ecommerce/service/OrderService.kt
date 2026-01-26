@@ -2,8 +2,8 @@ package com.ecommerce.service
 
 import com.ecommerce.entity.Order
 import com.ecommerce.enums.OrderStatus
-import com.ecommerce.event.InventoryReservationRequest
 import com.ecommerce.generator.TsidGenerator
+import com.ecommerce.proto.inventory.InventoryReservationRequest
 import com.ecommerce.proto.order.OrderCancelledEvent
 import com.ecommerce.proto.order.OrderConfirmedEvent
 import com.ecommerce.repository.OrderRepository
@@ -29,7 +29,6 @@ import java.time.LocalDateTime
 class OrderService(
     private val orderRepository: OrderRepository,
     private val orderItemService: OrderItemService,
-    private val kafkaTemplate: KafkaTemplate<String, Any>,
     private val protoKafkaTemplate: KafkaTemplate<String, Message>,
     private val orderNumberGenerator: OrderNumberGenerator,
     private val idGenerator: TsidGenerator
@@ -57,7 +56,7 @@ class OrderService(
         order: Order,
         orderItems: List<com.ecommerce.dto.OrderItemDto>
     ): com.ecommerce.proto.order.OrderCreatedEvent {
-        val now = java.time.Instant.now()
+        val now = Instant.now()
         return com.ecommerce.proto.order.OrderCreatedEvent.newBuilder()
             .setOrderId(order.id)
             .setOrderNumber(order.orderNumber)
@@ -67,7 +66,7 @@ class OrderService(
             .setShippingAddress(order.shippingAddress)
             .setShippingName(order.shippingName)
             .setShippingPhone(order.shippingPhone)
-            .setTimestamp(com.google.protobuf.Timestamp.newBuilder()
+            .setTimestamp(Timestamp.newBuilder()
                 .setSeconds(now.epochSecond)
                 .setNanos(now.nano)
                 .build())
@@ -99,12 +98,17 @@ class OrderService(
         val orderItems = orderItemService.getOrderItems(savedOrder.id)
 
         request.items.forEach { itemRequest ->
-            val reservationRequest = InventoryReservationRequest(
-                orderId = savedOrder.orderNumber,
-                productId = itemRequest.productId,
-                quantity = itemRequest.quantity
-            )
-            kafkaTemplate.send("inventory-reservation-request", savedOrder.orderNumber, reservationRequest)
+            val now = Instant.now()
+            val reservationRequest = InventoryReservationRequest.newBuilder()
+                .setOrderId(savedOrder.orderNumber)
+                .setProductId(itemRequest.productId)
+                .setQuantity(itemRequest.quantity)
+                .setTimestamp(Timestamp.newBuilder()
+                    .setSeconds(now.epochSecond)
+                    .setNanos(now.nano)
+                    .build())
+                .build()
+            protoKafkaTemplate.send("inventory-reservation-request", savedOrder.orderNumber, reservationRequest)
             logger.info("Sent inventory reservation request for product: ${itemRequest.productId}")
         }
 
@@ -213,8 +217,8 @@ class OrderService(
             .setReason(reason)
             .setTimestamp(
                 Timestamp.newBuilder()
-                .setSeconds(java.time.Instant.now().epochSecond)
-                .setNanos(java.time.Instant.now().nano)
+                .setSeconds(Instant.now().epochSecond)
+                .setNanos(Instant.now().nano)
                 .build())
             .build()
         protoKafkaTemplate.send("order-cancelled", order.orderNumber, event)
