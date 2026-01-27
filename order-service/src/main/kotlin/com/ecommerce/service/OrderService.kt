@@ -1,20 +1,20 @@
 package com.ecommerce.service
 
 import com.ecommerce.entity.Order
+import com.ecommerce.entity.OutboxEvent
 import com.ecommerce.enums.OrderStatus
 import com.ecommerce.generator.TsidGenerator
 import com.ecommerce.proto.inventory.InventoryReservationRequest
 import com.ecommerce.proto.order.OrderCancelledEvent
 import com.ecommerce.proto.order.OrderConfirmedEvent
 import com.ecommerce.repository.OrderRepository
+import com.ecommerce.repository.OutboxEventRepository
 import com.ecommerce.request.CreateOrderRequest
 import com.ecommerce.response.OrderItemResponse
 import com.ecommerce.response.OrderResponse
 import com.ecommerce.util.OrderNumberGenerator
-import com.google.protobuf.Message
 import com.google.protobuf.Timestamp
 import org.slf4j.LoggerFactory
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -29,18 +29,48 @@ import java.time.LocalDateTime
 class OrderService(
     private val orderRepository: OrderRepository,
     private val orderItemService: OrderItemService,
-    private val protoKafkaTemplate: KafkaTemplate<String, Message>,
+    private val outboxEventRepository: OutboxEventRepository,
     private val orderNumberGenerator: OrderNumberGenerator,
     private val idGenerator: TsidGenerator
 ) {
 
     private val logger = LoggerFactory.getLogger(OrderService::class.java)
 
+    companion object {
+        private const val TOPIC_ORDER_CREATED = "order-created"
+        private const val TOPIC_ORDER_CANCELLED = "order-cancelled"
+        private const val TOPIC_ORDER_CONFIRMED = "order-confirmed"
+        private const val TOPIC_INVENTORY_RESERVATION = "inventory-reservation-request"
+        private const val EVENT_TYPE_ORDER_CREATED = "OrderCreated"
+        private const val EVENT_TYPE_ORDER_CANCELLED = "OrderCancelled"
+        private const val EVENT_TYPE_ORDER_CONFIRMED = "OrderConfirmed"
+        private const val EVENT_TYPE_INVENTORY_RESERVATION = "InventoryReservationRequest"
+        private const val CURRENCY_KRW = "KRW"
+    }
+
     private fun createMoneyProto(amount: java.math.BigDecimal): com.ecommerce.proto.common.Money {
         return com.ecommerce.proto.common.Money.newBuilder()
             .setAmount(amount.toString())
-            .setCurrency("KRW")
+            .setCurrency(CURRENCY_KRW)
             .build()
+    }
+
+    private fun saveOutboxEvent(
+        aggregateId: String,
+        eventType: String,
+        topic: String,
+        payload: ByteArray
+    ) {
+        val outboxEvent = OutboxEvent(
+            aggregateType = OutboxEvent.AGGREGATE_TYPE_ORDER,
+            aggregateId = aggregateId,
+            eventType = eventType,
+            topic = topic,
+            kafkaKey = aggregateId,
+            payload = payload
+        )
+        outboxEventRepository.save(outboxEvent)
+        logger.debug("Saved outbox event: type={}, aggregateId={}", eventType, aggregateId)
     }
 
     private fun createOrderItemProto(item: com.ecommerce.dto.OrderItemDto): com.ecommerce.proto.order.OrderItem {
@@ -108,13 +138,24 @@ class OrderService(
                     .setNanos(now.nano)
                     .build())
                 .build()
-            protoKafkaTemplate.send("inventory-reservation-request", savedOrder.orderNumber, reservationRequest)
-            logger.info("Sent inventory reservation request for product: ${itemRequest.productId}")
+
+            saveOutboxEvent(
+                aggregateId = savedOrder.orderNumber,
+                eventType = EVENT_TYPE_INVENTORY_RESERVATION,
+                topic = TOPIC_INVENTORY_RESERVATION,
+                payload = reservationRequest.toByteArray()
+            )
+            logger.info("Saved inventory reservation request to outbox for product: ${itemRequest.productId}")
         }
 
         val protoEvent = createOrderCreatedEventProto(savedOrder, orderItems)
-        protoKafkaTemplate.send("order-created", savedOrder.orderNumber, protoEvent)
-        logger.info("Published Protobuf event to order-created: ${savedOrder.orderNumber}")
+        saveOutboxEvent(
+            aggregateId = savedOrder.orderNumber,
+            eventType = EVENT_TYPE_ORDER_CREATED,
+            topic = TOPIC_ORDER_CREATED,
+            payload = protoEvent.toByteArray()
+        )
+        logger.info("Saved order created event to outbox: ${savedOrder.orderNumber}")
 
         return OrderResponse(
             id = savedOrder.id,
@@ -210,6 +251,7 @@ class OrderService(
         order.cancel()
         orderRepository.save(order)
 
+        val now = Instant.now()
         val event = OrderCancelledEvent.newBuilder()
             .setOrderId(order.id)
             .setOrderNumber(order.orderNumber)
@@ -217,13 +259,20 @@ class OrderService(
             .setReason(reason)
             .setTimestamp(
                 Timestamp.newBuilder()
-                .setSeconds(Instant.now().epochSecond)
-                .setNanos(Instant.now().nano)
-                .build())
+                    .setSeconds(now.epochSecond)
+                    .setNanos(now.nano)
+                    .build()
+            )
             .build()
-        protoKafkaTemplate.send("order-cancelled", order.orderNumber, event)
 
-        logger.info("Order cancelled: ${order.orderNumber}, reason: $reason")
+        saveOutboxEvent(
+            aggregateId = order.orderNumber,
+            eventType = EVENT_TYPE_ORDER_CANCELLED,
+            topic = TOPIC_ORDER_CANCELLED,
+            payload = event.toByteArray()
+        )
+
+        logger.info("Order cancelled and saved to outbox: ${order.orderNumber}, reason: $reason")
     }
 
     @Transactional
@@ -245,17 +294,26 @@ class OrderService(
         order.confirm()
         orderRepository.save(order)
 
+        val now = Instant.now()
         val event = OrderConfirmedEvent.newBuilder()
             .setOrderId(order.id)
             .setOrderNumber(order.orderNumber)
             .setUserId(order.userId)
-            .setTimestamp(Timestamp.newBuilder()
-                .setSeconds(Instant.now().epochSecond)
-                .setNanos(Instant.now().nano)
-                .build())
+            .setTimestamp(
+                Timestamp.newBuilder()
+                    .setSeconds(now.epochSecond)
+                    .setNanos(now.nano)
+                    .build()
+            )
             .build()
-        protoKafkaTemplate.send("order-confirmed", order.orderNumber, event)
 
-        logger.info("Order confirmed: ${order.orderNumber}")
+        saveOutboxEvent(
+            aggregateId = order.orderNumber,
+            eventType = EVENT_TYPE_ORDER_CONFIRMED,
+            topic = TOPIC_ORDER_CONFIRMED,
+            payload = event.toByteArray()
+        )
+
+        logger.info("Order confirmed and saved to outbox: ${order.orderNumber}")
     }
 }

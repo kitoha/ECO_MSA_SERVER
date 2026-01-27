@@ -5,16 +5,15 @@ import com.ecommerce.entity.Order
 import com.ecommerce.enums.OrderStatus
 import com.ecommerce.generator.TsidGenerator
 import com.ecommerce.repository.OrderRepository
+import com.ecommerce.repository.OutboxEventRepository
 import com.ecommerce.request.CreateOrderRequest
 import com.ecommerce.request.OrderItemRequest
 import com.ecommerce.util.OrderNumberGenerator
-import com.google.protobuf.Message
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
-import org.springframework.kafka.core.KafkaTemplate
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -24,14 +23,14 @@ class OrderServiceTest : BehaviorSpec({
 
     val orderRepository = mockk<OrderRepository>()
     val orderItemService = mockk<OrderItemService>()
-    val protoKafkaTemplate = mockk<KafkaTemplate<String, Message>>()
+    val outboxEventRepository = mockk<OutboxEventRepository>(relaxed = true)
     val orderNumberGenerator = mockk<OrderNumberGenerator>()
     val idGenerator = mockk<TsidGenerator>()
 
-    val orderService = OrderService(orderRepository, orderItemService, protoKafkaTemplate, orderNumberGenerator, idGenerator)
+    val orderService = OrderService(orderRepository, orderItemService, outboxEventRepository, orderNumberGenerator, idGenerator)
 
     beforeEach {
-        clearMocks(orderRepository, orderItemService, protoKafkaTemplate, idGenerator, answers = false)
+        clearMocks(orderRepository, orderItemService, outboxEventRepository, idGenerator, answers = false)
     }
 
     given("OrderService의 createOrder 메서드가 주어졌을 때") {
@@ -77,7 +76,7 @@ class OrderServiceTest : BehaviorSpec({
                     subtotal = BigDecimal("100000")
                 )
             )
-            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { outboxEventRepository.save(any()) } answers { firstArg() }
             every { orderNumberGenerator.generate() } returns "ORD-20250128-000001"
 
             then("주문이 정상적으로 생성되어야 한다") {
@@ -92,8 +91,7 @@ class OrderServiceTest : BehaviorSpec({
                 verify(exactly = 1) { orderRepository.save(any()) }
                 verify(exactly = 1) { orderItemService.addOrderItem(any(), any()) }
                 verify(exactly = 1) { orderItemService.getOrderItems(any()) }
-                verify(exactly = 1) { protoKafkaTemplate.send("inventory-reservation-request", any(), any()) }
-                verify(exactly = 1) { protoKafkaTemplate.send("order-created", any(), any()) }
+                verify(exactly = 2) { outboxEventRepository.save(any()) }
             }
         }
 
@@ -113,14 +111,14 @@ class OrderServiceTest : BehaviorSpec({
             every { orderRepository.save(any()) } returns savedOrder
             every { orderItemService.addOrderItem(any(), any()) } just runs
             every { orderItemService.getOrderItems(any()) } returns emptyList()
-            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { outboxEventRepository.save(any()) } answers { firstArg() }
             every { orderNumberGenerator.generate() } returns "ORD-20250128-000002"
 
-            then("모든 상품에 대해 재고 예약 요청이 발행되어야 한다") {
+            then("모든 상품에 대해 재고 예약 이벤트가 Outbox에 저장되어야 한다") {
                 orderService.createOrder(multiItemRequest, userId)
 
                 verify(exactly = 2) { orderItemService.addOrderItem(any(), any()) }
-                verify(exactly = 2) { protoKafkaTemplate.send("inventory-reservation-request", any(), any()) }
+                verify(exactly = 3) { outboxEventRepository.save(any()) }
             }
         }
     }
@@ -238,7 +236,7 @@ class OrderServiceTest : BehaviorSpec({
         `when`("주문을 취소하면") {
             every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
-            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { outboxEventRepository.save(any()) } answers { firstArg() }
 
             then("주문 상태가 CANCELLED로 변경되어야 한다") {
                 orderService.cancelOrder(orderId)
@@ -247,27 +245,19 @@ class OrderServiceTest : BehaviorSpec({
 
                 verify(exactly = 1) { orderRepository.findById(orderId) }
                 verify(exactly = 1) { orderRepository.save(any()) }
-                verify(exactly = 1) { protoKafkaTemplate.send("order-cancelled", any(), any()) }
+                verify(exactly = 1) { outboxEventRepository.save(any()) }
             }
         }
 
         `when`("취소 사유와 함께 주문을 취소하면") {
             every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
-            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { outboxEventRepository.save(any()) } answers { firstArg() }
 
-            then("취소 이벤트에 사유가 포함되어야 한다") {
+            then("취소 이벤트가 Outbox에 저장되어야 한다") {
                 orderService.cancelOrder(orderId, "재고 부족")
 
-                verify(exactly = 1) {
-                    protoKafkaTemplate.send(
-                        "order-cancelled",
-                        any(),
-                        match<com.ecommerce.proto.order.OrderCancelledEvent> { event ->
-                            event.reason.contains("재고 부족")
-                        }
-                    )
-                }
+                verify(exactly = 1) { outboxEventRepository.save(any()) }
             }
         }
     }
@@ -289,7 +279,7 @@ class OrderServiceTest : BehaviorSpec({
         `when`("주문을 확정하면") {
             every { orderRepository.findById(orderId) } returns order
             every { orderRepository.save(any()) } returns order
-            every { protoKafkaTemplate.send(any(), any(), any()) } returns mockk()
+            every { outboxEventRepository.save(any()) } answers { firstArg() }
 
             then("주문 상태가 CONFIRMED로 변경되어야 한다") {
                 orderService.confirmOrder(orderId)
@@ -298,7 +288,7 @@ class OrderServiceTest : BehaviorSpec({
 
                 verify(exactly = 1) { orderRepository.findById(orderId) }
                 verify(exactly = 1) { orderRepository.save(any()) }
-                verify(exactly = 1) { protoKafkaTemplate.send("order-confirmed", any(), any()) }
+                verify(exactly = 1) { outboxEventRepository.save(any()) }
             }
         }
     }

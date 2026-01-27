@@ -12,6 +12,7 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
 
 @Configuration
+@Deprecated("Replaced by Transactional Outbox Pattern with Debezium CDC")
 class KafkaProtoConfig {
 
     @Value("\${spring.kafka.bootstrap-servers}")
