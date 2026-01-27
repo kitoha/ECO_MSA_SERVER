@@ -83,7 +83,7 @@
 
 <img width="1780" height="1340" alt="Image" src="https://github.com/user-attachments/assets/0c497ece-0362-4137-826a-190f7fe45198" />
 
-**Compensation Flow (Failure Case)**:
+**Compensation Flow (Failure Case)**:  
 <img width="1780" height="1340" alt="Image" src="https://github.com/user-attachments/assets/7fd22fbd-922e-4998-b5a7-3a665bf1bf03" />
 
 **핵심 구현 포인트**:
