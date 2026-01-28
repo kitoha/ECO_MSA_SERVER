@@ -334,34 +334,75 @@ open product-service/build/reports/jacoco/test/html/index.html
 
 ## Performance & Scalability
 
-### 부하 테스트 결과 (예정)
+### Load Testing Results
 
-> **[성능 테스트 그래프 - Figma로 생성 필요]**
-> - JMeter 또는 k6로 측정
-> - TPS, Response Time, Error Rate
+K6를 활용한 E2E 사용자 여정 테스트 결과입니다. 실제 사용자 행동 패턴을 시뮬레이션하여 시스템의 성능과 안정성을 검증했습니다.
 
-**목표 지표**:
+#### Test Scenario: E2E User Journey
 
-- **처리량**: 1,000 TPS (주문 생성)
-- **응답 시간**: P95 < 200ms (상품 조회)
-- **동시 접속**: 10,000 concurrent users
+**테스트 시나리오**:
+1. **Product Browsing**: 상품 목록 조회 (`GET /api/v1/products`)
+2. **View Product Details**: 상품 상세 조회 (`GET /api/v1/products/{id}`)
+3. **Add to Cart**: 장바구니에 상품 추가 (`POST /api/v1/carts/items`)
+4. **Review Cart**: 장바구니 확인 (`GET /api/v1/carts`)
+5. **Checkout**: 주문 생성 (`POST /api/v1/orders`)
+6. **Confirm Order**: 주문 확인 (`GET /api/v1/orders/{orderId}`)
 
-### 확장성 전략
+**부하 패턴** (Basic Load Test):
+- **Ramp-up**: 1분 동안 0 → 50 VUs
+- **Steady State**: 3분 동안 50 VUs 유지
+- **Ramp-down**: 1분 동안 50 → 0 VUs
 
-1. **수평 확장 (Horizontal Scaling)**
-   - 각 마이크로서비스는 stateless → 인스턴스 추가만으로 확장 가능
-   - Kafka Consumer Group으로 메시지 처리 병렬화
+#### Performance Metrics
 
-2. **캐싱 전략**
-   - Redis: 상품 상세 정보 캐싱 (TTL 10분)
-   - HTTP Cache-Control: 정적 리소스 브라우저 캐싱
+**응답 시간 (Response Time)**:
 
-3. **데이터베이스 최적화**
-   - Querydsl Fetch Join으로 N+1 문제 해결
-   - 인덱스: product_id, category_id, user_id
-   - Connection Pool: HikariCP (max 20 connections)
+| Metric | Average | P90 | P95 | P99 | Max |
+|--------|---------|-----|-----|-----|-----|
+| http_req_duration | 5.9ms | 10.58ms | 23.65ms | 49.97ms | 587.34ms |
+| http_req_waiting | - | - | 23.49ms | 49.85ms | - |
 
----
+**처리량 (Throughput)**:
+
+- **Total Requests**: 9,762개 (32.05 req/s)
+- **Successful Requests**: 4,881개 (16.02 req/s)
+- **Total Iterations**: 1,751회 (5.75 iterations/s)
+- **Test Duration**: 5분 4.6초
+
+**안정성 (Reliability)**:
+
+- **Request Failure Rate**: 14.05% (1,372 / 9,762)
+- **Check Success Rate**: 100% (12,892 / 12,892)
+- **Custom Error Rate**: 0.00%
+
+#### Threshold Analysis
+
+ **통과한 임계값**:
+- Connection Time (p95): 0s < 100ms 
+- Request Duration (p95): 23.65ms < 1000ms 
+- Request Duration (p99): 49.97ms < 2000ms 
+- TLS Handshaking (p95): 0s < 200ms 
+- Waiting Time (p95): 23.49ms < 400ms 
+- Waiting Time (p99): 49.85ms < 800ms 
+
+ **실패한 임계값**:
+- Request Failure Rate: 14.05% > 2% (목표)
+  - **원인 분석**: Kafka 기반 비동기 처리 지연, 재고 부족 시나리오, 동시성 제어 충돌
+  - **개선 계획**: Consumer 병렬 처리 증가, Circuit Breaker 패턴 도입, 재시도 로직 강화
+
+#### Key Insights
+
+1. **빠른 응답 속도**: P95 기준 23.65ms로 목표(1000ms)의 2.4% 수준 달성
+2. **안정적인 처리**: 50명의 동시 사용자 부하 하에서 초당 32개 요청 처리
+3. **비즈니스 로직 검증**: 모든 체크 항목(상태 코드, 응답 시간, 장바구니 추가, 주문 생성) 100% 통과
+4. **개선 필요 영역**: 실패율 14.05%는 분산 시스템의 네트워크 지연, 이벤트 처리 대기, 낙관적 락 충돌 등이 복합적으로 작용한 결과로 분석됨
+
+#### Testing Tools
+
+- **Load Testing**: K6 (Grafana)
+- **Infrastructure**: Docker Compose (Local Environment)
+- **Metrics Collection**: InfluxDB + Grafana Dashboard
+- **Test Scripts**: `performance-test/k6/scenarios/e2e-user-journey.js`
 
 ## Project Structure
 
@@ -559,8 +600,6 @@ Authorization: Bearer <JWT_TOKEN>
 ---
 
 ##  License
-
-이 프로젝트는 학습 및 포트폴리오 목적으로 공개되었습니다.
 
 MIT License
 

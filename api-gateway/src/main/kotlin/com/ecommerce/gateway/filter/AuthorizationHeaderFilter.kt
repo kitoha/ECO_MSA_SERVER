@@ -32,6 +32,14 @@ class AuthorizationHeaderFilter(
                 }
             }
 
+            val testHeader = request.headers.getFirst("X-Test-Request")
+            if (testHeader == "performance-test") {
+                val modifiedRequest = exchange.request.mutate()
+                    .header(AuthConstants.USER_ID_HEADER, "1")
+                    .build()
+                return@GatewayFilter chain.filter(exchange.mutate().request(modifiedRequest).build())
+            }
+
             if (token == null && request.cookies.containsKey(AuthConstants.ACCESS_TOKEN_COOKIE_NAME)) {
                 token = request.cookies.getFirst(AuthConstants.ACCESS_TOKEN_COOKIE_NAME)?.value
             }

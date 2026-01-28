@@ -53,6 +53,11 @@ docker-compose.override.yml
 *.sqlite
 *.sqlite3
 
+### Performance Test ###
+performance-test/results/
+performance-test/analysis/
+*.log
+
 ## serena
 .serena
 

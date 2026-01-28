@@ -1,0 +1,153 @@
+
+services:
+  postgres:
+    cpus: 2.0
+    mem_limit: 4096m
+    mem_reservation: 2048m
+    environment:
+      # PostgreSQL 성능 튜닝
+      POSTGRES_SHARED_BUFFERS: 1GB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 3GB
+      POSTGRES_MAINTENANCE_WORK_MEM: 256MB
+      POSTGRES_WORK_MEM: 4MB
+      POSTGRES_MAX_CONNECTIONS: 100
+
+  kafka:
+    # Kafka는 메모리를 많이 사용
+    cpus: 2.0
+    mem_limit: 2048m
+    mem_reservation: 1024m
+    environment:
+      KAFKA_HEAP_OPTS: "-Xms1G -Xmx1G"
+      KAFKA_JVM_PERFORMANCE_OPTS: "-XX:+UseG1GC -XX:MaxGCPauseMillis=20"
+
+  zookeeper:
+    cpus: 0.5
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  prometheus:
+    cpus: 0.5
+    mem_limit: 1024m
+    mem_reservation: 512m
+
+  grafana:
+    cpus: 0.5
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  eureka-server:
+    cpus: 0.5
+    mem_limit: 512m
+    mem_reservation: 256m
+    environment:
+      JAVA_OPTS: >-
+        -Xms256m
+        -Xmx384m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+        -XX:+PrintGCDetails
+        -XX:+PrintGCDateStamps
+
+  api-gateway:
+    cpus: 0.5
+    mem_limit: 1024m
+    mem_reservation: 512m
+    environment:
+      JAVA_OPTS: >-
+        -Xms512m
+        -Xmx768m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+
+  user-service:
+    cpus: 0.5
+    mem_limit: 1024m
+    mem_reservation: 512m
+    environment:
+      JAVA_OPTS: >-
+        -Xms512m
+        -Xmx768m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+      SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: 20
+      SPRING_DATASOURCE_HIKARI_MINIMUMIDL: 5
+      SPRING_DATASOURCE_HIKARI_CONNECTIONTIMEOUT: 30000
+      SPRING_DATASOURCE_HIKARI_IDLETIMEOUT: 600000
+      SPRING_DATASOURCE_HIKARI_MAXLIFETIME: 1800000
+
+  product-service:
+    cpus: 0.5
+    mem_limit: 1024m
+    mem_reservation: 512m
+    environment:
+      JAVA_OPTS: >-
+        -Xms512m
+        -Xmx768m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+      SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: 20
+      SPRING_DATASOURCE_HIKARI_MINIMUMIDL: 5
+      SPRING_DATASOURCE_HIKARI_CONNECTIONTIMEOUT: 30000
+
+  cart-service:
+    cpus: 0.5
+    mem_limit: 1024m
+    mem_reservation: 512m
+    environment:
+      JAVA_OPTS: >-
+        -Xms512m
+        -Xmx768m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+      SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: 15
+      SPRING_DATASOURCE_HIKARI_MINIMUMIDL: 5
+
+  order-service:
+    cpus: 0.5
+    mem_limit: 1024m
+    mem_reservation: 512m
+    environment:
+      JAVA_OPTS: >-
+        -Xms512m
+        -Xmx768m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+      SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: 20
+      SPRING_DATASOURCE_HIKARI_MINIMUMIDL: 5
+      SPRING_KAFKA_PRODUCER_BATCHSIZE: 16384
+      SPRING_KAFKA_PRODUCER_BUFFERMEMORYBYTES: 33554432
+
+  payment-service:
+    cpus: 0.5
+    mem_limit: 1024m
+    mem_reservation: 512m
+    environment:
+      JAVA_OPTS: >-
+        -Xms512m
+        -Xmx768m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+      SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: 20
+      SPRING_DATASOURCE_HIKARI_MINIMUMIDL: 5
+
+  inventory-service:
+    cpus: 0.5
+    mem_limit: 1024m
+    mem_reservation: 512m
+    environment:
+      JAVA_OPTS: >-
+        -Xms512m
+        -Xmx768m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:+UseStringDeduplication
+      SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: 15
+      SPRING_DATASOURCE_HIKARI_MINIMUMIDL: 5
